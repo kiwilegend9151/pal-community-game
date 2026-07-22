@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Player {
+  id       String @id @default(uuid())
+  twitchId String @unique
+  username String
+
+  level Int @default(1)
+  xp    Int @default(0)
+  coins Int @default(100)
+
+  monsters Monster[]
+
+  createdAt DateTime @default(now())
+}
+
+model Monster {
+  id String @id @default(uuid())
+
+  species String
+  level   Int    @default(1)
+
+  hp      Int
+  attack  Int
+  defense Int
+  speed   Int
+
+  rarity String
+  shiny  Boolean @default(false)
+
+  ownerId String?
+  owner   Player? @relation(fields: [ownerId], references: [id])
+
+  streamerId String?
+  streamer   Streamer? @relation(fields: [streamerId], references: [id])
+}
+
+model Streamer {
+  id          String   @id @default(uuid())
+
+  twitchId    String   @unique
+  channelName String   @unique
+
+  live        Boolean  @default(true)
+  lastSpawn   DateTime?
+
+  monsters    Monster[]
+
+  createdAt   DateTime @default(now())
+}
