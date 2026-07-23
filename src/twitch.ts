@@ -1,113 +1,134 @@
 import tmi from "tmi.js";
-import axios from "axios";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./database";
 
-const prisma = new PrismaClient();
+type MonsterTemplate = {
+    species: string;
+    hp: number;
+    attack: number;
+    defense: number;
+    speed: number;
+    rarity: string;
+};
 
 type ActiveMonster = {
     id: string;
     species: string;
 };
 
+const monsterTemplates: MonsterTemplate[] = [
+    { species: "Flame Fox", hp: 45, attack: 15, defense: 10, speed: 12, rarity: "Common" },
+    { species: "Aqua Turtle", hp: 60, attack: 12, defense: 18, speed: 7, rarity: "Rare" },
+    { species: "Volt Mouse", hp: 35, attack: 20, defense: 8, speed: 20, rarity: "Epic" }
+];
+
 const connectedChannels = new Map<string, tmi.Client>();
 const activeMonsters = new Map<string, ActiveMonster>();
-
-// Tracks viewers who have attempted the current monster
 const catchAttempts = new Map<string, Set<string>>();
-
-// Stops the same viewer sending simultaneous catch requests
 const catchLocks = new Set<string>();
-
-// Stores each channel's despawn timer
 const despawnTimers = new Map<string, NodeJS.Timeout>();
 
-const DESPAWN_TIME = 60 * 1000; // 60 seconds
+const DESPAWN_TIME = 60 * 1000;
+const CATCH_CHANCE = 0.5;
+const XP_REWARD = 50;
+const COIN_REWARD = 10;
 
-function getCatchChance(): number {
-    return 0.5;
+function normalizeChannel(channelName: string): string {
+    return channelName.replace(/^#/, "").trim().toLowerCase();
+}
+
+function getRandomMonster(): MonsterTemplate {
+    return monsterTemplates[Math.floor(Math.random() * monsterTemplates.length)];
+}
+
+async function awardPlayer(
+    playerId: string,
+    currentXp: number,
+    currentLevel: number,
+    currentCoins: number
+) {
+    let xp = currentXp + XP_REWARD;
+    let level = currentLevel;
+
+    while (xp >= level * 100) {
+        xp -= level * 100;
+        level++;
+    }
+
+    return prisma.player.update({
+        where: { id: playerId },
+        data: {
+            xp,
+            level,
+            coins: currentCoins + COIN_REWARD
+        }
+    });
 }
 
 export async function connectStreamer(channelName: string) {
-    const normalizedChannel = channelName.toLowerCase();
+    const normalizedChannel = normalizeChannel(channelName);
 
-    if (connectedChannels.has(normalizedChannel)) {
+    if (!normalizedChannel) {
+        throw new Error("Channel name cannot be empty");
+    }
+
+    const existingClient = connectedChannels.get(normalizedChannel);
+
+    if (existingClient) {
         console.log(`${normalizedChannel} already connected`);
+        return existingClient;
+    }
 
-        return connectedChannels.get(normalizedChannel);
+    const botUsername = process.env.TWITCH_BOT_USERNAME;
+    const accessToken = process.env.TWITCH_ACCESS_TOKEN;
+
+    if (!botUsername || !accessToken) {
+        throw new Error("TWITCH_BOT_USERNAME or TWITCH_ACCESS_TOKEN is missing");
     }
 
     const client = new tmi.Client({
-        options: {
-            debug: true
-        },
-
+        options: { debug: true },
         identity: {
-            username: process.env.TWITCH_BOT_USERNAME!,
-            password: process.env.TWITCH_ACCESS_TOKEN!
+            username: botUsername,
+            password: accessToken
         },
-
-        channels: [
-            normalizedChannel
-        ]
+        channels: [normalizedChannel]
     });
 
     client.on("message", async (channel, tags, message, self) => {
-        if (self) {
+        if (self || message.trim().toLowerCase() !== "!catch") {
             return;
         }
 
-        if (message.trim().toLowerCase() !== "!catch") {
-            return;
-        }
-
-        const currentChannel = channel
-            .replace("#", "")
-            .toLowerCase();
-
+        const currentChannel = normalizeChannel(channel);
         const monster = activeMonsters.get(currentChannel);
 
         if (!monster) {
-            await client.say(
-                currentChannel,
-                "❌ There is no monster to catch right now!"
-            );
-
+            await client.say(currentChannel, "❌ There is no monster to catch right now!");
             return;
         }
 
         const viewerTwitchId = tags["user-id"];
-
-        const viewerName =
-            tags["display-name"] ??
-            tags.username ??
-            "A viewer";
+        const viewerName = tags["display-name"] ?? tags.username ?? "A viewer";
 
         if (!viewerTwitchId) {
             await client.say(
                 currentChannel,
                 `❌ ${viewerName}, I couldn't find your Twitch user ID.`
             );
-
             return;
         }
 
-        const viewerLock =
-            `${currentChannel}:${viewerTwitchId}`;
+        const viewerLock = `${currentChannel}:${viewerTwitchId}`;
 
         if (catchLocks.has(viewerLock)) {
             return;
         }
 
-        let attemptedViewers =
-            catchAttempts.get(currentChannel);
+        let attemptedViewers = catchAttempts.get(currentChannel);
 
         if (!attemptedViewers) {
             attemptedViewers = new Set<string>();
-
-            catchAttempts.set(
-                currentChannel,
-                attemptedViewers
-            );
+            catchAttempts.set(currentChannel, attemptedViewers);
         }
 
         if (attemptedViewers.has(viewerTwitchId)) {
@@ -115,7 +136,6 @@ export async function connectStreamer(channelName: string) {
                 currentChannel,
                 `❌ ${viewerName}, you have already tried to catch this monster!`
             );
-
             return;
         }
 
@@ -123,47 +143,34 @@ export async function connectStreamer(channelName: string) {
         attemptedViewers.add(viewerTwitchId);
 
         try {
-            const catchChance = getCatchChance();
             const catchRoll = Math.random();
 
             console.log(
-                `${viewerName} catch roll: ` +
-                `${catchRoll.toFixed(2)} / ${catchChance}`
+                `${viewerName} catch roll: ${catchRoll.toFixed(2)} / ${CATCH_CHANCE}`
             );
 
-            if (catchRoll >= catchChance) {
+            if (catchRoll >= CATCH_CHANCE) {
                 await client.say(
                     currentChannel,
-                    `💨 ${viewerName} tried to catch ` +
-                    `${monster.species}, but failed!`
+                    `💨 ${viewerName} tried to catch ${monster.species}, but failed!`
                 );
-
                 return;
             }
 
             const player = await prisma.player.upsert({
-                where: {
-                    twitchId: viewerTwitchId
-                },
-
-                update: {
-                    username: viewerName
-                },
-
+                where: { twitchId: viewerTwitchId },
+                update: { username: viewerName },
                 create: {
                     twitchId: viewerTwitchId,
                     username: viewerName
                 }
             });
 
-            const activeMonster =
-                await prisma.monster.findUnique({
-                    where: {
-                        id: monster.id
-                    }
-                });
+            const wildMonster = await prisma.monster.findUnique({
+                where: { id: monster.id }
+            });
 
-            if (!activeMonster) {
+            if (!wildMonster || wildMonster.ownerId) {
                 activeMonsters.delete(currentChannel);
                 catchAttempts.delete(currentChannel);
 
@@ -171,86 +178,96 @@ export async function connectStreamer(channelName: string) {
                     currentChannel,
                     "❌ That monster is no longer available!"
                 );
-
                 return;
             }
 
-            const caughtMonster =
-                await prisma.monster.create({
-                    data: {
-                        species: activeMonster.species,
-                        level: activeMonster.level,
-                        hp: activeMonster.hp,
-                        attack: activeMonster.attack,
-                        defense: activeMonster.defense,
-                        speed: activeMonster.speed,
-                        rarity: activeMonster.rarity,
-                        shiny: activeMonster.shiny,
-                        ownerId: player.id,
-                        streamerId: activeMonster.streamerId
-                    }
-                });
+            const caughtMonster = await prisma.monster.create({
+                data: {
+                    species: wildMonster.species,
+                    level: wildMonster.level,
+                    hp: wildMonster.hp,
+                    attack: wildMonster.attack,
+                    defense: wildMonster.defense,
+                    speed: wildMonster.speed,
+                    rarity: wildMonster.rarity,
+                    shiny: wildMonster.shiny,
+                    ownerId: player.id,
+                    streamerId: wildMonster.streamerId
+                }
+            });
+
+            const updatedPlayer = await awardPlayer(
+                player.id,
+                player.xp,
+                player.level,
+                player.coins
+            );
+
+            const levelMessage =
+                updatedPlayer.level > player.level
+                    ? ` You reached level ${updatedPlayer.level}!`
+                    : "";
 
             await client.say(
                 currentChannel,
-                `🎉 ${viewerName} caught the wild ` +
-                `${monster.species}!`
+                `🎉 ${viewerName} caught ${monster.species}! ` +
+                `+${XP_REWARD} XP and +${COIN_REWARD} coins.${levelMessage}`
             );
 
             console.log(
-                `${viewerName} caught ${monster.species} ` +
-                `(${caughtMonster.id}) in ${currentChannel}`
+                `${viewerName} caught ${monster.species} (${caughtMonster.id}) ` +
+                `in ${currentChannel}`
             );
         } catch (error) {
-            console.error(
-                "Catch failed:",
-                error
-            );
-
-            // Allow another attempt when a database error occurs
+            console.error("Catch failed:", error);
             attemptedViewers.delete(viewerTwitchId);
 
             await client.say(
                 currentChannel,
-                `❌ Sorry ${viewerName}, the catch could not ` +
-                `be saved. Try again.`
+                `❌ Sorry ${viewerName}, the catch could not be saved. Try again.`
             );
         } finally {
             catchLocks.delete(viewerLock);
         }
     });
 
+    client.on("disconnected", (reason) => {
+        connectedChannels.delete(normalizedChannel);
+        console.warn(`Disconnected from ${normalizedChannel}: ${reason}`);
+    });
+
     await client.connect();
+    connectedChannels.set(normalizedChannel, client);
 
-    connectedChannels.set(
-        normalizedChannel,
-        client
-    );
-
-    console.log(
-        `Joined Twitch channel: ${normalizedChannel}`
-    );
+    console.log(`Joined Twitch channel: ${normalizedChannel}`);
 
     return client;
 }
 
-export async function spawnMonsterForStreamer(
-    channelName: string
-) {
-    try {
-        const normalizedChannel =
-            channelName.toLowerCase();
+export async function spawnMonsterForStreamer(channelName: string) {
+    const normalizedChannel = normalizeChannel(channelName);
 
-        const previousTimer =
-            despawnTimers.get(normalizedChannel);
+    try {
+        const streamer = await prisma.streamer.findUnique({
+            where: { channelName: normalizedChannel }
+        });
+
+        if (!streamer) {
+            throw new Error(`Streamer record not found for ${normalizedChannel}`);
+        }
+
+        if (!connectedChannels.has(normalizedChannel)) {
+            await connectStreamer(normalizedChannel);
+        }
+
+        const previousTimer = despawnTimers.get(normalizedChannel);
 
         if (previousTimer) {
             clearTimeout(previousTimer);
             despawnTimers.delete(normalizedChannel);
         }
 
-        const previousMonster =
-            activeMonsters.get(normalizedChannel);
+        const previousMonster = activeMonsters.get(normalizedChannel);
 
         if (previousMonster) {
             await prisma.monster.deleteMany({
@@ -264,49 +281,41 @@ export async function spawnMonsterForStreamer(
         activeMonsters.delete(normalizedChannel);
         catchAttempts.delete(normalizedChannel);
 
-        const response = await axios.post<ActiveMonster>(
-            "http://localhost:3000/monsters/spawn"
-        );
+        const template = getRandomMonster();
 
-        const monster = response.data;
+        const monster = await prisma.monster.create({
+            data: {
+                ...template,
+                level: 1,
+                shiny: Math.random() < 0.05,
+                streamerId: streamer.id
+            }
+        });
 
-        console.log(
-            "Spawned:",
-            monster.species,
-            monster.id
-        );
+        activeMonsters.set(normalizedChannel, {
+            id: monster.id,
+            species: monster.species
+        });
 
-        activeMonsters.set(
-            normalizedChannel,
-            monster
-        );
+        catchAttempts.set(normalizedChannel, new Set<string>());
 
-        catchAttempts.set(
-            normalizedChannel,
-            new Set<string>()
-        );
-
-        const client =
-            connectedChannels.get(normalizedChannel);
+        const client = connectedChannels.get(normalizedChannel);
 
         if (client) {
+            const shinyText = monster.shiny ? " ✨SHINY✨" : "";
+
             await client.say(
                 normalizedChannel,
-                `🐾 A wild ${monster.species} appeared! ` +
+                `🐾 A wild${shinyText} ${monster.species} appeared! ` +
                 `Everyone has 60 seconds to type !catch!`
             );
         }
 
         const despawnTimer = setTimeout(async () => {
             try {
-                const currentMonster =
-                    activeMonsters.get(normalizedChannel);
+                const currentMonster = activeMonsters.get(normalizedChannel);
 
-                // Prevent an old timer removing a newer monster
-                if (
-                    !currentMonster ||
-                    currentMonster.id !== monster.id
-                ) {
+                if (!currentMonster || currentMonster.id !== monster.id) {
                     return;
                 }
 
@@ -321,8 +330,7 @@ export async function spawnMonsterForStreamer(
                     }
                 });
 
-                const currentClient =
-                    connectedChannels.get(normalizedChannel);
+                const currentClient = connectedChannels.get(normalizedChannel);
 
                 if (currentClient) {
                     await currentClient.say(
@@ -332,29 +340,22 @@ export async function spawnMonsterForStreamer(
                 }
 
                 console.log(
-                    `${monster.species} despawned from ` +
-                    `${normalizedChannel}`
+                    `${monster.species} despawned from ${normalizedChannel}`
                 );
             } catch (error) {
-                console.error(
-                    "Despawn failed:",
-                    error
-                );
+                console.error("Despawn failed:", error);
             }
         }, DESPAWN_TIME);
 
-        despawnTimers.set(
-            normalizedChannel,
-            despawnTimer
+        despawnTimers.set(normalizedChannel, despawnTimer);
+
+        console.log(
+            `Spawned ${monster.species} (${monster.id}) for ${normalizedChannel}`
         );
 
         return monster;
     } catch (error) {
-        console.error(
-            "Spawn failed:",
-            error
-        );
-
+        console.error(`Spawn failed for ${normalizedChannel}:`, error);
         throw error;
     }
 }

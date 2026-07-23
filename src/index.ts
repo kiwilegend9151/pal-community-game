@@ -21,7 +21,7 @@ app.use("/players", playerRoutes);
 app.use("/monsters", monsterRoutes);
 app.use("/streamers", streamerRoutes);
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
     res.json({
         message: "Twitch Monsters API Running"
     });
@@ -46,9 +46,11 @@ io.on("connection", (socket) => {
 const PORT = Number(process.env.PORT) || 3000;
 
 server.listen(PORT, async () => {
-
     console.log(`Server running on ${PORT}`);
 
-    startSpawnTimer();
-
+    try {
+        await startSpawnTimer();
+    } catch (error) {
+        console.error("Could not start spawn timer:", error);
+    }
 });

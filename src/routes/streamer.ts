@@ -1,87 +1,66 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../database";
 import { connectStreamer } from "../twitch";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.post("/install", async (req, res) => {
-
     console.log("Streamer install request received");
 
     try {
+        const { twitchId, channelName } = req.body;
 
-        const {
-            twitchId,
-            channelName
-        } = req.body;
-
-
-        console.log({
-            twitchId,
-            channelName
-        });
-
-
-        if (!twitchId || !channelName) {
-
+        if (
+            typeof twitchId !== "string" ||
+            typeof channelName !== "string" ||
+            !twitchId.trim() ||
+            !channelName.trim()
+        ) {
             return res.status(400).json({
                 error: "Missing twitchId or channelName"
             });
-
         }
 
+        const normalizedChannel = channelName
+            .replace(/^#/, "")
+            .trim()
+            .toLowerCase();
 
-        // Connect bot first
-        await connectStreamer(channelName);
-
-
-        // Save streamer
         const streamer = await prisma.streamer.upsert({
-
-            where: {
-                twitchId
-            },
-
+            where: { twitchId: twitchId.trim() },
             update: {
-                channelName,
+                channelName: normalizedChannel,
                 live: true
             },
-
             create: {
-                twitchId,
-                channelName,
+                twitchId: twitchId.trim(),
+                channelName: normalizedChannel,
                 live: true
             }
-
         });
 
+        try {
+            await connectStreamer(normalizedChannel);
+        } catch (error) {
+            console.error("TWITCH CONNECTION ERROR:", error);
 
-        res.json({
+            return res.status(502).json({
+                error: "Streamer saved, but Twitch chat connection failed",
+                streamer
+            });
+        }
 
+        return res.json({
             message: "Streamer connected",
             streamer
-
         });
-
-
     } catch (error) {
+        console.error("STREAMER INSTALL ERROR:", error);
 
-        console.error(
-            "STREAMER INSTALL ERROR:",
-            error
-        );
-
-
-        res.status(500).json({
-
+        return res.status(500).json({
             error: "Streamer install failed"
-
         });
-
     }
-
 });
-
 
 export default router;
