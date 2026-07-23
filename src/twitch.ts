@@ -95,26 +95,68 @@ export async function connectStreamer(channelName: string) {
     });
 
     client.on("message", async (channel, tags, message, self) => {
-        if (self || message.trim().toLowerCase() !== "!catch") {
+        if (self) {
             return;
         }
 
+        const command = message.trim().toLowerCase();
         const currentChannel = normalizeChannel(channel);
-        const monster = activeMonsters.get(currentChannel);
-
-        if (!monster) {
-            await client.say(currentChannel, "❌ There is no monster to catch right now!");
-            return;
-        }
-
         const viewerTwitchId = tags["user-id"];
         const viewerName = tags["display-name"] ?? tags.username ?? "A viewer";
 
         if (!viewerTwitchId) {
-            await client.say(
-                currentChannel,
-                `❌ ${viewerName}, I couldn't find your Twitch user ID.`
-            );
+            return;
+        }
+
+        if (command === "!profile") {
+            try {
+                const player = await prisma.player.findUnique({
+                    where: {
+                        twitchId: viewerTwitchId
+                    },
+                    include: {
+                        monsters: true
+                    }
+                });
+
+                if (!player) {
+                    await client.say(
+                        currentChannel,
+                        `👤 ${viewerName}, you do not have a profile yet. Catch a monster first!`
+                    );
+                    return;
+                }
+
+                const xpNeeded = player.level * 100;
+
+                await client.say(
+                    currentChannel,
+                    `👤 ${player.username} | ` +
+                    `Level ${player.level} | ` +
+                    `XP: ${player.xp}/${xpNeeded} | ` +
+                    `Coins: ${player.coins} | ` +
+                    `Monsters: ${player.monsters.length}`
+                );
+            } catch (error) {
+                console.error("Profile command failed:", error);
+
+                await client.say(
+                    currentChannel,
+                    `❌ Sorry ${viewerName}, your profile could not be loaded.`
+                );
+            }
+
+            return;
+        }
+
+        if (command !== "!catch") {
+            return;
+        }
+
+        const monster = activeMonsters.get(currentChannel);
+
+        if (!monster) {
+            await client.say(currentChannel, "❌ There is no monster to catch right now!");
             return;
         }
 
