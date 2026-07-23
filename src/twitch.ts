@@ -101,8 +101,12 @@ export async function connectStreamer(channelName: string) {
 
         const command = message.trim().toLowerCase();
         const currentChannel = normalizeChannel(channel);
+
         const viewerTwitchId = tags["user-id"];
-        const viewerName = tags["display-name"] ?? tags.username ?? "A viewer";
+        const viewerName =
+            tags["display-name"] ??
+            tags.username ??
+            "A viewer";
 
         if (!viewerTwitchId) {
             return;
@@ -149,6 +153,75 @@ export async function connectStreamer(channelName: string) {
             return;
         }
 
+        if (command === "!collection") {
+            try {
+                const player = await prisma.player.findUnique({
+                    where: {
+                        twitchId: viewerTwitchId
+                    },
+                    include: {
+                        monsters: {
+                            orderBy: {
+                                species: "asc"
+                            }
+                        }
+                    }
+                });
+
+                if (!player || player.monsters.length === 0) {
+                    await client.say(
+                        currentChannel,
+                        `📭 ${viewerName}, your collection is empty. Go catch some monsters!`
+                    );
+                    return;
+                }
+
+                const groupedMonsters = new Map<
+                    string,
+                    { count: number; hasShiny: boolean }
+                >();
+
+                for (const monster of player.monsters) {
+                    const existing = groupedMonsters.get(monster.species);
+
+                    if (existing) {
+                        existing.count++;
+                        existing.hasShiny =
+                            existing.hasShiny || monster.shiny;
+                    } else {
+                        groupedMonsters.set(monster.species, {
+                            count: 1,
+                            hasShiny: monster.shiny
+                        });
+                    }
+                }
+
+                const collectionText = Array.from(
+                    groupedMonsters.entries()
+                )
+                    .map(([species, details]) => {
+                        const shinyIcon = details.hasShiny ? "✨ " : "";
+                        return `${shinyIcon}${species} ×${details.count}`;
+                    })
+                    .join(", ");
+
+                await client.say(
+                    currentChannel,
+                    `🎒 ${player.username}'s Collection ` +
+                    `(${player.monsters.length}): ${collectionText}`
+                );
+            } catch (error) {
+                console.error("Collection command failed:", error);
+
+                await client.say(
+                    currentChannel,
+                    `❌ Sorry ${viewerName}, your collection could not be loaded.`
+                );
+            }
+
+            return;
+        }
+
         if (command !== "!catch") {
             return;
         }
@@ -156,7 +229,10 @@ export async function connectStreamer(channelName: string) {
         const monster = activeMonsters.get(currentChannel);
 
         if (!monster) {
-            await client.say(currentChannel, "❌ There is no monster to catch right now!");
+            await client.say(
+                currentChannel,
+                "❌ There is no monster to catch right now!"
+            );
             return;
         }
 
