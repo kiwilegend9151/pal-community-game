@@ -1,5 +1,6 @@
 import tmi from "tmi.js";
 import { prisma } from "./database";
+import { monsterTemplates } from "./monsters";
 
 type MonsterTemplate = {
     species: string;
@@ -7,6 +8,9 @@ type MonsterTemplate = {
     attack: number;
     defense: number;
     speed: number;
+    paldeck: string;
+    type1: string;
+    type2: string;
     rarity: string;
 };
 
@@ -14,12 +18,6 @@ type ActiveMonster = {
     id: string;
     species: string;
 };
-
-const monsterTemplates: MonsterTemplate[] = [
-    { species: "Flame Fox", hp: 45, attack: 15, defense: 10, speed: 12, rarity: "Common" },
-    { species: "Aqua Turtle", hp: 60, attack: 12, defense: 18, speed: 7, rarity: "Rare" },
-    { species: "Volt Mouse", hp: 35, attack: 20, defense: 8, speed: 20, rarity: "Epic" }
-];
 
 const connectedChannels = new Map<string, tmi.Client>();
 const activeMonsters = new Map<string, ActiveMonster>();
