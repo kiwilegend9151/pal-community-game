@@ -15,6 +15,7 @@ model Player {
   level Int @default(1)
   xp    Int @default(0)
   coins Int @default(100)
+  lastDailyAt DateTime?
 
   monsters Monster[]
 

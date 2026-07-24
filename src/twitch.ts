@@ -24,7 +24,8 @@ const activeMonsters = new Map<string, ActiveMonster>();
 const catchAttempts = new Map<string, Set<string>>();
 const catchLocks = new Set<string>();
 const despawnTimers = new Map<string, NodeJS.Timeout>();
-
+const DAILY_REWARD = 100;
+const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DESPAWN_TIME = 60 * 1000;
 const CATCH_CHANCE = 0.5;
 const XP_REWARD = 50;
@@ -124,7 +125,7 @@ export async function connectStreamer(channelName: string) {
                 if (!player) {
                     await client.say(
                         currentChannel,
-                        `👤 ${viewerName}, you do not have a profile yet. Catch a monster first!`
+                        `👤 ${viewerName}, you do not have a profile yet. Catch a pal first!`
                     );
                     return;
                 }
@@ -169,7 +170,7 @@ export async function connectStreamer(channelName: string) {
                 if (!player || player.monsters.length === 0) {
                     await client.say(
                         currentChannel,
-                        `📭 ${viewerName}, your collection is empty. Go catch some monsters!`
+                        `📭 ${viewerName}, your collection is empty. Go catch some pals!`
                     );
                     return;
                 }
@@ -220,6 +221,119 @@ export async function connectStreamer(channelName: string) {
             return;
         }
 
+        if (command === "!daily") {
+            try {
+                const player = await prisma.player.upsert({
+                    where: {
+                        twitchId: viewerTwitchId
+                    },
+                    update: {
+                        username: viewerName
+                    },
+                    create: {
+                        twitchId: viewerTwitchId,
+                        username: viewerName
+                    }
+                });
+        
+                const now = new Date();
+                const cooldownCutoff = new Date(
+                    now.getTime() - DAILY_COOLDOWN
+                );
+        
+                /*
+                 * updateMany prevents two messages sent at almost the same time
+                 * from claiming the reward twice.
+                 */
+                const claimResult = await prisma.player.updateMany({
+                    where: {
+                        id: player.id,
+                        OR: [
+                            {
+                                lastDailyAt: null
+                            },
+                            {
+                                lastDailyAt: {
+                                    lte: cooldownCutoff
+                                }
+                            }
+                        ]
+                    },
+                    data: {
+                        coins: {
+                            increment: DAILY_REWARD
+                        },
+                        lastDailyAt: now
+                    }
+                });
+        
+                if (claimResult.count === 0) {
+                    const updatedPlayer = await prisma.player.findUnique({
+                        where: {
+                            id: player.id
+                        }
+                    });
+        
+                    if (!updatedPlayer?.lastDailyAt) {
+                        await client.say(
+                            currentChannel,
+                            `❌ ${viewerName}, your daily reward could not be checked.`
+                        );
+        
+                        return;
+                    }
+        
+                    const nextClaimTime =
+                        updatedPlayer.lastDailyAt.getTime() +
+                        DAILY_COOLDOWN;
+        
+                    const remainingMilliseconds = Math.max(
+                        0,
+                        nextClaimTime - Date.now()
+                    );
+        
+                    const remainingHours = Math.floor(
+                        remainingMilliseconds / (60 * 60 * 1000)
+                    );
+        
+                    const remainingMinutes = Math.ceil(
+                        (remainingMilliseconds % (60 * 60 * 1000)) /
+                        (60 * 1000)
+                    );
+        
+                    await client.say(
+                        currentChannel,
+                        `⏳ ${viewerName}, you have already claimed your daily reward. ` +
+                        `Try again in ${remainingHours}h ${remainingMinutes}m.`
+                    );
+        
+                    return;
+                }
+        
+                const rewardedPlayer = await prisma.player.findUnique({
+                    where: {
+                        id: player.id
+                    }
+                });
+        
+                await client.say(
+                    currentChannel,
+                    `🎁 ${viewerName} claimed their daily reward! ` +
+                    `+${DAILY_REWARD} coins. ` +
+                    `Balance: ${rewardedPlayer?.coins ?? player.coins + DAILY_REWARD} coins.`
+                );
+            } catch (error) {
+                console.error("Daily command failed:", error);
+        
+                await client.say(
+                    currentChannel,
+                    `❌ Sorry ${viewerName}, your daily reward could not be claimed.`
+                );
+            }
+        
+            return;
+        }
+
         if (command !== "!catch") {
             return;
         }
@@ -229,7 +343,7 @@ export async function connectStreamer(channelName: string) {
         if (!monster) {
             await client.say(
                 currentChannel,
-                "❌ There is no monster to catch right now!"
+                "❌ There is no pal to catch right now!"
             );
             return;
         }
@@ -250,7 +364,7 @@ export async function connectStreamer(channelName: string) {
         if (attemptedViewers.has(viewerTwitchId)) {
             await client.say(
                 currentChannel,
-                `❌ ${viewerName}, you have already tried to catch this monster!`
+                `❌ ${viewerName}, you have already tried to catch this pal!`
             );
             return;
         }
@@ -292,7 +406,7 @@ export async function connectStreamer(channelName: string) {
 
                 await client.say(
                     currentChannel,
-                    "❌ That monster is no longer available!"
+                    "❌ That pal is no longer available!"
                 );
                 return;
             }
