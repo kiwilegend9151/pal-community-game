@@ -222,6 +222,81 @@ export async function connectStreamer(channelName: string) {
             return;
         }
 
+if (command === "!dex" || command === "!paldex") {
+    try {
+        const player = await prisma.player.findUnique({
+            where: {
+                twitchId: viewerTwitchId
+            },
+            select: {
+                username: true,
+                monsters: {
+                    select: {
+                        species: true,
+                        shiny: true
+                    }
+                }
+            }
+        });
+
+        const totalSpecies = new Set(
+            monsterTemplates.map((template) =>
+                template.species.trim().toLowerCase()
+            )
+        ).size;
+
+        if (!player || player.monsters.length === 0) {
+            await client.say(
+                currentChannel,
+                `📖 ${viewerName}'s Paldeck: 0/${totalSpecies} discovered (0%). ` +
+                `✨ Shiny species: 0. Catch a pal with !catch to get started!`
+            );
+
+            return;
+        }
+
+        const discoveredSpecies = new Set(
+            player.monsters.map((monster) =>
+                monster.species.trim().toLowerCase()
+            )
+        );
+
+        const shinySpecies = new Set(
+            player.monsters
+                .filter((monster) => monster.shiny)
+                .map((monster) =>
+                    monster.species.trim().toLowerCase()
+                )
+        );
+
+        const completionPercentage =
+            totalSpecies === 0
+                ? 0
+                : Math.floor(
+                    (discoveredSpecies.size / totalSpecies) * 100
+                );
+
+        await client.say(
+            currentChannel,
+            `📖 ${player.username}'s Paldeck: ` +
+            `${discoveredSpecies.size}/${totalSpecies} discovered ` +
+            `(${completionPercentage}%). ` +
+            `✨ Shiny species: ${shinySpecies.size}. ` +
+            `Total pals owned: ${player.monsters.length}.`
+        );
+    } catch (error) {
+        console.error("Dex command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your Paldeck could not be loaded.`
+        );
+    }
+
+    return;
+}
+
+
         if (command === "!daily") {
             try {
                 const player = await prisma.player.upsert({
