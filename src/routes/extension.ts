@@ -102,15 +102,35 @@ router.post("/install", async (req, res) => {
 
         await connectStreamer(channelName);
 
-        return res.json({
+                return res.json({
             message: "Bot connected successfully",
             streamer
         });
     } catch (error) {
         console.error("Extension installation failed:", error);
 
+        if (axios.isAxiosError(error)) {
+            console.error("Twitch API response:", error.response?.data);
+
+            return res.status(error.response?.status || 500).json({
+                error:
+                    error.response?.data?.message ||
+                    error.message ||
+                    "Twitch API request failed"
+            });
+        }
+
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(401).json({
+                error: `Extension token error: ${error.message}`
+            });
+        }
+
         return res.status(500).json({
-            error: "Extension setup failed"
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Extension setup failed"
         });
     }
 });
