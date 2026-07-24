@@ -15,18 +15,38 @@ window.Twitch.ext.onAuthorized(async (auth) => {
             }
         );
 
-        const result = await response.json();
+        const responseText = await response.text();
+
+        let result;
+
+        try {
+            result = JSON.parse(responseText);
+        } catch {
+            result = {
+                error: responseText || `Request failed with status ${response.status}`
+            };
+        }
 
         if (!response.ok) {
-            throw new Error(result.error || "Setup failed");
+            throw new Error(
+                result.error ||
+                `Setup failed with status ${response.status}`
+            );
+        }
+
+        if (!result.streamer?.channelName) {
+            throw new Error("The server did not return a channel name");
         }
 
         status.textContent =
             `Connected! The bot has joined ${result.streamer.channelName}.`;
 
     } catch (error) {
-        console.error(error);
+        console.error("Extension installation failed:", error);
+
         status.textContent =
-            "The bot could not connect. Please try again.";
+            `Connection failed: ${
+                error instanceof Error ? error.message : String(error)
+            }`;
     }
 });
