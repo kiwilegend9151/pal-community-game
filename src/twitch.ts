@@ -22,6 +22,7 @@ type ActiveMonster = {
 const connectedChannels = new Map<string, tmi.Client>();
 const activeMonsters = new Map<string, ActiveMonster>();
 const catchAttempts = new Map<string, Set<string>>();
+const successfulCatchers = new Map<string, string[]>();
 const catchLocks = new Set<string>();
 const despawnTimers = new Map<string, NodeJS.Timeout>();
 const DAILY_REWARD = 100;
@@ -433,20 +434,18 @@ export async function connectStreamer(channelName: string) {
                 player.coins
             );
 
+            const catchers = successfulCatchers.get(currentChannel) ?? [];
+            catchers.push(viewerName);
+            successfulCatchers.set(currentChannel, catchers);
+
             const levelMessage =
                 updatedPlayer.level > player.level
-                    ? ` You reached level ${updatedPlayer.level}!`
+                    ? ` and reached level ${updatedPlayer.level}`
                     : "";
-
-            await client.say(
-                currentChannel,
-                `🎉 ${viewerName} caught ${monster.species}! ` +
-                `+${XP_REWARD} XP and +${COIN_REWARD} coins.${levelMessage}`
-            );
 
             console.log(
                 `${viewerName} caught ${monster.species} (${caughtMonster.id}) ` +
-                `in ${currentChannel}`
+                `in ${currentChannel}${levelMessage}`
             );
         } catch (error) {
             console.error("Catch failed:", error);
@@ -510,6 +509,7 @@ export async function spawnMonsterForStreamer(channelName: string) {
 
         activeMonsters.delete(normalizedChannel);
         catchAttempts.delete(normalizedChannel);
+        successfulCatchers.delete(normalizedChannel);
 
         const template = getRandomMonster();
 
@@ -528,6 +528,7 @@ export async function spawnMonsterForStreamer(channelName: string) {
         });
 
         catchAttempts.set(normalizedChannel, new Set<string>());
+        successfulCatchers.set(normalizedChannel, []);
 
         const client = connectedChannels.get(normalizedChannel);
 
@@ -549,8 +550,12 @@ export async function spawnMonsterForStreamer(channelName: string) {
                     return;
                 }
 
+                const attempts = catchAttempts.get(normalizedChannel)?.size ?? 0;
+                const catchers = successfulCatchers.get(normalizedChannel) ?? [];
+
                 activeMonsters.delete(normalizedChannel);
                 catchAttempts.delete(normalizedChannel);
+                successfulCatchers.delete(normalizedChannel);
                 despawnTimers.delete(normalizedChannel);
 
                 await prisma.monster.deleteMany({
@@ -563,14 +568,30 @@ export async function spawnMonsterForStreamer(channelName: string) {
                 const currentClient = connectedChannels.get(normalizedChannel);
 
                 if (currentClient) {
-                    await currentClient.say(
-                        normalizedChannel,
-                        `💨 The wild ${monster.species} ran away!`
-                    );
+                    const shinyText = monster.shiny ? "✨ SHINY " : "";
+
+                    if (catchers.length > 0) {
+                        const catcherNames = catchers.join(", ");
+
+                        await currentClient.say(
+                            normalizedChannel,
+                            `🎉 The wild ${shinyText}${monster.species} fled! ` +
+                            `Caught by: ${catcherNames}. ` +
+                            `${catchers.length}/${attempts} attempts succeeded. ` +
+                            `Each catcher earned +${XP_REWARD} XP and +${COIN_REWARD} coins.`
+                        );
+                    } else {
+                        await currentClient.say(
+                            normalizedChannel,
+                            `💨 The wild ${shinyText}${monster.species} fled! ` +
+                            `Nobody caught it (${attempts} attempt${attempts === 1 ? "" : "s"}).`
+                        );
+                    }
                 }
 
                 console.log(
-                    `${monster.species} despawned from ${normalizedChannel}`
+                    `${monster.species} encounter ended in ${normalizedChannel}: ` +
+                    `${catchers.length}/${attempts} successful catches`
                 );
             } catch (error) {
                 console.error("Despawn failed:", error);
