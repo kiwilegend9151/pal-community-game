@@ -456,10 +456,6 @@ if (command === "!dex" || command === "!paldex") {
             );
 
             if (catchRoll >= CATCH_CHANCE) {
-                await client.say(
-                    currentChannel,
-                    `💨 ${viewerName} tried to catch ${monster.species}, but failed!`
-                );
                 return;
             }
 
