@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "Monster" ADD COLUMN     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "paldeck" TEXT,
+ADD COLUMN     "type1" TEXT,
+ADD COLUMN     "type2" TEXT,
+ALTER COLUMN "level" DROP DEFAULT;
+
+-- AlterTable
+ALTER TABLE "Streamer" ALTER COLUMN "live" SET DEFAULT true;

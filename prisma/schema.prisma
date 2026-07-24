@@ -22,26 +22,27 @@ model Player {
 }
 
 model Monster {
-  id String @id @default(uuid())
+  id         String   @id @default(uuid())
+  species    String
+  paldeck    String?
+  type1      String?
+  type2      String?
+  level      Int
+  hp         Int
+  attack     Int
+  defense    Int
+  speed      Int
+  rarity     String
+  shiny      Boolean  @default(false)
 
-  species String
-  level   Int    @default(1)
-
-  hp      Int
-  attack  Int
-  defense Int
-  speed   Int
-
-  rarity String
-  shiny  Boolean @default(false)
-
-  ownerId String?
-  owner   Player? @relation(fields: [ownerId], references: [id])
+  ownerId    String?
+  owner      Player?  @relation(fields: [ownerId], references: [id])
 
   streamerId String?
   streamer   Streamer? @relation(fields: [streamerId], references: [id])
-}
 
+  createdAt  DateTime @default(now())
+}
 model Streamer {
   id          String   @id @default(uuid())
 
