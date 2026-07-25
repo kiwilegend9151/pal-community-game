@@ -102,7 +102,7 @@ client.on("message", async (channel, tags, message, self) => {
                 `Level ${player.level} | ` +
                 `XP: ${player.xp}/${xpNeeded} | ` +
                 `Coins: ${player.coins} | ` +
-                `Monsters: ${player.monsters.length}`
+                `Pals: ${player.monsters.length}`
             );
         } catch (error) {
             console.error("Profile command failed:", error);
@@ -163,8 +163,8 @@ client.on("message", async (channel, tags, message, self) => {
                 groupedMonsters.entries()
             )
                 .map(([species, details]) => {
-                    const shinyIcon = details.hasShiny ? "✨ " : "";
-                    return `${shinyIcon}${species} ×${details.count}`;
+                    const luckyIcon = details.hasShiny ? "✨ " : "";
+                    return `${luckyIcon}${species} ×${details.count}`;
                 })
                 .join(", ");
 
@@ -197,7 +197,7 @@ if (command === "!dex" || command === "!paldex") {try {const player = await pris
         await client.say(
             currentChannel,
             `📖 ${viewerName}'s Paldeck: 0/${totalSpecies} discovered (0%). ` +
-            `✨ Shiny species: 0. Catch a pal with !catch to get started!`
+            `✨ Lucky species: 0. Catch a pal with !catch to get started!`
         );
 
         return;
@@ -229,7 +229,7 @@ if (command === "!dex" || command === "!paldex") {try {const player = await pris
         `📖 ${player.username}'s Paldeck: ` +
         `${discoveredSpecies.size}/${totalSpecies} discovered ` +
         `(${completionPercentage}%). ` +
-        `✨ Shiny species: ${shinySpecies.size}. ` +
+        `✨ Lucky species: ${shinySpecies.size}. ` +
         `Total pals owned: ${player.monsters.length}.`
     );
 } catch (error) {
@@ -556,7 +556,7 @@ try {
     const client = connectedChannels.get(normalizedChannel);
 
     if (client) {
-        const shinyText = monster.shiny ? " ✨SHINY✨" : "";
+        const shinyText = monster.shiny ? " ✨LUCKY✨" : "";
 
         await client.say(
             normalizedChannel,
@@ -591,7 +591,7 @@ try {
             const currentClient = connectedChannels.get(normalizedChannel);
 
             if (currentClient) {
-                const shinyText = monster.shiny ? "✨ SHINY " : "";
+                const shinyText = monster.shiny ? "✨ LUCKY " : "";
 
                 if (catchers.length > 0) {
                     const catcherNames = catchers.join(", ");
