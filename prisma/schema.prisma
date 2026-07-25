@@ -22,13 +22,30 @@ model Player {
   gigaSpheres  Int @default(0)
   hyperSpheres Int @default(0)
 
-  monsters Monster[]
+  monsters      Monster[]
+  paldexEntries PaldexEntry[]
 
   createdAt DateTime @default(now())
 }
 
+model PaldexEntry {
+  id           String   @id @default(uuid())
+  playerId     String
+  species      String
+  paldeck      String
+  rarity       String
+  hasLucky     Boolean  @default(false)
+  discoveredAt DateTime @default(now())
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, species])
+  @@index([playerId])
+  @@index([paldeck])
+}
+
 model Monster {
-  id      String @id @default(uuid())
+  id      String  @id @default(uuid())
   species String
   paldeck String?
   type1   String?
@@ -42,12 +59,16 @@ model Monster {
   shiny   Boolean @default(false)
 
   ownerId String?
-  owner   Player? @relation(fields: [ownerId], references: [id])
+  owner   Player? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
   streamerId String?
-  streamer   Streamer? @relation(fields: [streamerId], references: [id])
+  streamer   Streamer? @relation(fields: [streamerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+
+  @@index([ownerId])
+  @@index([streamerId])
+  @@index([species])
 }
 
 model Streamer {

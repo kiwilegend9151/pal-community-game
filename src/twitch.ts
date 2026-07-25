@@ -15,7 +15,31 @@ const DAILY_REWARD = 100;
 const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DESPAWN_TIME = 60 * 1000;
 const XP_REWARD = 50;
-const COIN_REWARD = 10;
+
+type SupportedRarity =
+    | "Common"
+    | "Rare"
+    | "Epic"
+    | "Legendary"
+    | "Mythical";
+
+const NORMAL_CATCH_COINS: Record<SupportedRarity, number> = {
+    Common: 10,
+    Rare: 20,
+    Epic: 40,
+    Legendary: 100,
+    Mythical: 250
+};
+
+const FIRST_PALDECK_BONUS: Record<
+    Exclude<SupportedRarity, "Mythical">,
+    number
+> = {
+    Common: 20,
+    Rare: 40,
+    Epic: 75,
+    Legendary: 150
+};
 
 type SphereType = "pal" | "mega" | "giga" | "hyper";
 
@@ -167,7 +191,9 @@ function getRandomMonster(): MonsterTemplate {return monsterTemplates[Math.floor
 async function awardPlayer(
     playerId: string,
     currentXp: number,
-    currentLevel: number
+    currentLevel: number,
+    coinReward: number,
+    hyperSphereReward = 0
 ) {
     let xp = currentXp + XP_REWARD;
     let level = currentLevel;
@@ -183,10 +209,67 @@ async function awardPlayer(
             xp,
             level,
             coins: {
-                increment: COIN_REWARD
+                increment: coinReward
+            },
+            hyperSpheres: {
+                increment: hyperSphereReward
             }
         }
     });
+}
+
+function getSupportedRarity(rarity: string): SupportedRarity {
+    switch (rarity.trim().toLowerCase()) {
+        case "rare":
+            return "Rare";
+        case "epic":
+            return "Epic";
+        case "legendary":
+            return "Legendary";
+        case "mythical":
+            return "Mythical";
+        case "common":
+        default:
+            return "Common";
+    }
+}
+
+function rollMythicalDiscoveryReward(): {
+    bonusCoins: number;
+    hyperSpheres: number;
+    rewardText: string;
+} {
+    const roll = Math.random();
+
+    if (roll < 0.60) {
+        return {
+            bonusCoins: 500,
+            hyperSpheres: 0,
+            rewardText: "+500 coins"
+        };
+    }
+
+    if (roll < 0.85) {
+        return {
+            bonusCoins: 500,
+            hyperSpheres: 1,
+            rewardText: "+500 coins and +1 Hyper Sphere"
+        };
+    }
+
+    if (roll < 0.95) {
+        return {
+            bonusCoins: 500,
+            hyperSpheres: 2,
+            rewardText: "+500 coins and +2 Hyper Spheres"
+        };
+    }
+
+    return {
+        bonusCoins: 1000,
+        hyperSpheres: 0,
+        rewardText: "JACKPOT: +1,000 coins"
+    };
 }
 
 async function buySpheres(
@@ -494,64 +577,72 @@ client.on("message", async (channel, tags, message, self) => {
         return;
     }
 
-if (command === "!dex" || command === "!paldex") {try {const player = await prisma.player.findUnique({where: {twitchId: viewerTwitchId},select: {username: true,monsters: {select: {species: true,shiny: true}}}});
+if (command === "!dex" || command === "!paldex") {
+    try {
+        const player = await prisma.player.findUnique({
+            where: {
+                twitchId: viewerTwitchId
+            },
+            select: {
+                username: true,
+                _count: {
+                    select: {
+                        monsters: true
+                    }
+                },
+                paldexEntries: {
+                    select: {
+                        species: true,
+                        hasLucky: true
+                    }
+                }
+            }
+        });
 
-    const totalSpecies = new Set(
-        monsterTemplates.map((template) =>
-            template.species.trim().toLowerCase()
-        )
-    ).size;
-
-    if (!player || player.monsters.length === 0) {
-        await client.say(
-            currentChannel,
-            `📖 ${viewerName}'s Paldeck: 0/${totalSpecies} discovered (0%). ` +
-            `✨ Lucky species: 0. Catch a pal with !catch to get started!`
-        );
-
-        return;
-    }
-
-    const discoveredSpecies = new Set(
-        player.monsters.map((monster) =>
-            monster.species.trim().toLowerCase()
-        )
-    );
-
-    const shinySpecies = new Set(
-        player.monsters
-            .filter((monster) => monster.shiny)
-            .map((monster) =>
-                monster.species.trim().toLowerCase()
+        const totalSpecies = new Set(
+            monsterTemplates.map((template) =>
+                template.species.trim().toLowerCase()
             )
-    );
+        ).size;
 
-    const completionPercentage =
-        totalSpecies === 0
-            ? 0
-            : Math.floor(
-                (discoveredSpecies.size / totalSpecies) * 100
+        if (!player || player.paldexEntries.length === 0) {
+            await client.say(
+                currentChannel,
+                `📖 ${viewerName}'s Paldeck: 0/${totalSpecies} discovered (0%). ` +
+                `✨ Lucky species: 0. Catch a pal with !catch to get started!`
             );
 
-    await client.say(
-        currentChannel,
-        `📖 ${player.username}'s Paldeck: ` +
-        `${discoveredSpecies.size}/${totalSpecies} discovered ` +
-        `(${completionPercentage}%). ` +
-        `✨ Lucky species: ${shinySpecies.size}. ` +
-        `Total pals owned: ${player.monsters.length}.`
-    );
-} catch (error) {
-    console.error("Dex command failed:", error);
+            return;
+        }
 
-    await client.say(
-        currentChannel,
-        `❌ Sorry ${viewerName}, your Paldeck could not be loaded.`
-    );
-}
+        const discoveredCount = player.paldexEntries.length;
+        const luckySpeciesCount = player.paldexEntries.filter(
+            (entry) => entry.hasLucky
+        ).length;
 
-return;
+        const completionPercentage =
+            totalSpecies === 0
+                ? 0
+                : Math.floor((discoveredCount / totalSpecies) * 100);
 
+        await client.say(
+            currentChannel,
+            `📖 ${player.username}'s Paldeck: ` +
+            `${discoveredCount}/${totalSpecies} discovered ` +
+            `(${completionPercentage}%). ` +
+            `✨ Lucky species: ${luckySpeciesCount}. ` +
+            `Total pals owned: ${player._count.monsters}.`
+        );
+    } catch (error) {
+        console.error("Dex command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your Paldeck could not be loaded.`
+        );
+    }
+
+    return;
 }
 
     if (command === "!shop") {
@@ -912,35 +1003,105 @@ return;
             return;
         }
 
-        const caughtMonster = await prisma.monster.create({
-            data: {
-                species: wildMonster.species,
-                level: wildMonster.level,
-                hp: wildMonster.hp,
-                attack: wildMonster.attack,
-                defense: wildMonster.defense,
-                speed: wildMonster.speed,
-                rarity: wildMonster.rarity,
-                shiny: wildMonster.shiny,
-                ownerId: player.id,
-                streamerId: wildMonster.streamerId
+        const rarity = getSupportedRarity(wildMonster.rarity);
+        const normalizedSpecies = wildMonster.species.trim();
+
+        const catchResult = await prisma.$transaction(async (tx) => {
+            const paldexInsert = await tx.paldexEntry.createMany({
+                data: [
+                    {
+                        playerId: player.id,
+                        species: normalizedSpecies,
+                        paldeck: wildMonster.paldeck,
+                        rarity: wildMonster.rarity,
+                        hasLucky: wildMonster.shiny
+                    }
+                ],
+                skipDuplicates: true
+            });
+
+            if (paldexInsert.count === 0 && wildMonster.shiny) {
+                await tx.paldexEntry.updateMany({
+                    where: {
+                        playerId: player.id,
+                        species: normalizedSpecies,
+                        hasLucky: false
+                    },
+                    data: {
+                        hasLucky: true
+                    }
+                });
             }
+
+            const caughtMonster = await tx.monster.create({
+                data: {
+                    species: wildMonster.species,
+                    paldeck: wildMonster.paldeck,
+                    type1: wildMonster.type1,
+                    type2: wildMonster.type2,
+                    level: wildMonster.level,
+                    hp: wildMonster.hp,
+                    attack: wildMonster.attack,
+                    defense: wildMonster.defense,
+                    speed: wildMonster.speed,
+                    rarity: wildMonster.rarity,
+                    shiny: wildMonster.shiny,
+                    ownerId: player.id,
+                    streamerId: wildMonster.streamerId
+                }
+            });
+
+            const refreshedPlayer = await tx.player.findUnique({
+                where: {
+                    id: player.id
+                }
+            });
+
+            if (!refreshedPlayer) {
+                throw new Error(
+                    "Player disappeared before rewards were awarded"
+                );
+            }
+
+            return {
+                caughtMonster,
+                refreshedPlayer,
+                isNewPaldexEntry: paldexInsert.count === 1
+            };
         });
 
-        const refreshedPlayer = await prisma.player.findUnique({
-            where: {
-                id: player.id
-            }
-        });
+        const {
+            caughtMonster,
+            refreshedPlayer,
+            isNewPaldexEntry
+        } = catchResult;
 
         if (!refreshedPlayer) {
             throw new Error("Player disappeared before rewards were awarded");
         }
 
+        let coinReward = NORMAL_CATCH_COINS[rarity];
+        let hyperSphereReward = 0;
+        let mythicalRewardText: string | null = null;
+
+        if (isNewPaldexEntry) {
+            if (rarity === "Mythical") {
+                const mythicalReward = rollMythicalDiscoveryReward();
+
+                coinReward += mythicalReward.bonusCoins;
+                hyperSphereReward = mythicalReward.hyperSpheres;
+                mythicalRewardText = mythicalReward.rewardText;
+            } else {
+                coinReward += FIRST_PALDECK_BONUS[rarity];
+            }
+        }
+
         const updatedPlayer = await awardPlayer(
             player.id,
             refreshedPlayer.xp,
-            refreshedPlayer.level
+            refreshedPlayer.level,
+            coinReward,
+            hyperSphereReward
         );
 
         const catchers = successfulCatchers.get(currentChannel) ?? [];
@@ -952,9 +1113,25 @@ return;
                 ? ` and reached level ${updatedPlayer.level}`
                 : "";
 
+        if (
+            rarity === "Mythical" &&
+            isNewPaldexEntry &&
+            mythicalRewardText
+        ) {
+            await client.say(
+                currentChannel,
+                `🚨 MYTHICAL DISCOVERY! ${viewerName} added ` +
+                `${wildMonster.species.trim()} to their Paldeck! ` +
+                `${mythicalRewardText}.`
+            );
+        }
+
         console.log(
-            `${viewerName} caught ${monster.species} (${caughtMonster.id}) ` +
-            `with ${sphere.displayName} in ${currentChannel}${levelMessage}`
+            `${viewerName} caught ${monster.species.trim()} (${caughtMonster.id}) ` +
+            `with ${sphere.displayName} in ${currentChannel}; ` +
+            `rarity=${rarity}; newEntry=${isNewPaldexEntry}; ` +
+            `coins=${coinReward}; hyperSpheres=${hyperSphereReward}` +
+            `${levelMessage}`
         );
     } catch (error) {
         console.error("Catch failed:", error);
@@ -1053,11 +1230,11 @@ try {
     const client = connectedChannels.get(normalizedChannel);
 
     if (client) {
-        const shinyText = monster.shiny ? " ✨LUCKY✨" : "";
+        const luckyText = monster.shiny ? " ✨LUCKY✨" : "";
 
         await client.say(
             normalizedChannel,
-            `🐾 A wild${shinyText} ${monster.species} appeared! ` +
+            `🐾 A wild${luckyText} ${monster.species.trim()} appeared! ` +
             `Use !catch, !catch mega, !catch giga, or !catch hyper within 60 seconds!`
         );
     }
@@ -1098,7 +1275,7 @@ try {
                         `🎉 The wild ${shinyText}${monster.species} fled! ` +
                         `Caught by: ${catcherNames}. ` +
                         `${catchers.length}/${attempts} attempts succeeded. ` +
-                        `Each catcher earned +${XP_REWARD} XP and +${COIN_REWARD} coins.`
+                        `Each catcher earned +${XP_REWARD} XP and their catch reward.`
                     );
                 } else {
                     await currentClient.say(
