@@ -654,14 +654,286 @@ export const monsterTemplates = [
         attack: 80,
         defense: 80,
         speed: 10,
-	paldeck: "60",
+	paldeck: "060",
 	type1: "Grass",
 	type2: "",
         rarity: "Epic"
     },
-
-
-
+    {
+        species: "Cinnamoth ",
+        hp: 70,
+        attack: 80,
+        defense: 80,
+        speed: 10,
+	paldeck: "061",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Puffolt ",
+        hp: 75,
+        attack: 80,
+        defense: 70,
+        speed: 10,
+	paldeck: "062",
+	type1: "Electric",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Elphidran ",
+        hp: 110,
+        attack: 80,
+        defense: 90,
+        speed: 10,
+	paldeck: "063",
+	type1: "Dragon",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Vanwyrm ",
+        hp: 90,
+        attack: 115,
+        defense: 90,
+        speed: 10,
+	paldeck: "064",
+	type1: "Fire",
+	type2: "Dark",
+        rarity: "Epic"
+    },
+    {
+        species: "Felbat ",
+        hp: 100,
+        attack: 105,
+        defense: 110,
+        speed: 10,
+	paldeck: "065",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Vaelet ",
+        hp: 100,
+        attack: 100,
+        defense: 120,
+        speed: 10,
+	paldeck: "066",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Beegarde ",
+        hp: 80,
+        attack: 90,
+        defense: 90,
+        speed: 10,
+	paldeck: "067",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Elizabee ",
+        hp: 90,
+        attack: 105,
+        defense: 100,
+        speed: 10,
+	paldeck: "068",
+	type1: "Grass",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Lovander ",
+        hp: 120,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "069",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Grintale ",
+        hp: 110,
+        attack: 80,
+        defense: 80,
+        speed: 10,
+	paldeck: "070",
+	type1: "Neutal",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Tarantiss ",
+        hp: 110,
+        attack: 100,
+        defense: 100,
+        speed: 10,
+	paldeck: "071",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Polapup ",
+        hp: 95,
+        attack: 105,
+        defense: 105,
+        speed: 10,
+	paldeck: "072",
+	type1: "Ice",
+	type2: "Water",
+        rarity: "Epic"
+    },
+    {
+        species: "Leezpunk ",
+        hp: 80,
+        attack: 80,
+        defense: 50,
+        speed: 10,
+	paldeck: "073",
+	type1: "Dark",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Gorirat ",
+        hp: 90,
+        attack: 95,
+        defense: 90,
+        speed: 10,
+	paldeck: "074",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Surfent ",
+        hp: 90,
+        attack: 90,
+        defense: 80,
+        speed: 10,
+	paldeck: "075",
+	type1: "Water",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Robinquill ",
+        hp: 90,
+        attack: 105,
+        defense: 80,
+        speed: 10,
+	paldeck: "076",
+	type1: "Grass",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Flopie ",
+        hp: 75,
+        attack: 65,
+        defense: 70,
+        speed: 10,
+	paldeck: "077",
+	type1: "Grass",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Wixen ",
+        hp: 90,
+        attack: 110,
+        defense: 80,
+        speed: 10,
+	paldeck: "078",
+	type1: "Fire",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Katress ",
+        hp: 90,
+        attack: 105,
+        defense: 90,
+        speed: 10,
+	paldeck: "079",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Helzephyr ",
+        hp: 100,
+        attack: 125,
+        defense: 100,
+        speed: 10,
+	paldeck: "080",
+	type1: "Dark",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Elgrove ",
+        hp: 110,
+        attack: 105,
+        defense: 105,
+        speed: 10,
+	paldeck: "081",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Lunaris ",
+        hp: 90,
+        attack: 100,
+        defense: 90,
+        speed: 10,
+	paldeck: "082",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Fenglope ",
+        hp: 110,
+        attack: 110,
+        defense: 90,
+        speed: 10,
+	paldeck: "083",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Dinossom ",
+        hp: 110,
+        attack: 85,
+        defense: 90,
+        speed: 10,
+	paldeck: "084",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Legendary"
+    },
+    {
+        species: "Bushi ",
+        hp: 80,
+        attack: 125,
+        defense: 80,
+        speed: 10,
+	paldeck: "085",
+	type1: "Fire",
+	type2: "",
+        rarity: "Epic"
+    },
 
 
 
