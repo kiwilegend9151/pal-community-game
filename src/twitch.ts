@@ -540,7 +540,7 @@ try {
         data: {
             ...template,
             level: 1,
-            shiny: Math.random() < 0.05,
+            shiny: Math.random() < 0.005,
             streamerId: streamer.id
         }
     });
