@@ -329,4 +329,176 @@ export const monsterTemplates = [
 	type2: "",
         rarity: "Rare"
     },
+    {
+        species: "Fuddler ",
+        hp: 65,
+        attack: 80,
+        defense: 50,
+        speed: 10,
+	paldeck: "031",
+	type1: "Ground",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Eikthyrdeer ",
+        hp: 95,
+        attack: 80,
+        defense: 80,
+        speed: 10,
+	paldeck: "032",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Direhowl ",
+        hp: 80,
+        attack: 90,
+        defense: 75,
+        speed: 10,
+	paldeck: "033",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Caprity ",
+        hp: 100,
+        attack: 70,
+        defense: 90,
+        speed: 10,
+	paldeck: "034",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Swee ",
+        hp: 60,
+        attack: 60,
+        defense: 60,
+        speed: 10,
+	paldeck: "035",
+	type1: "Ice",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Sweepa ",
+        hp: 100,
+        attack: 90,
+        defense: 90,
+        speed: 10,
+	paldeck: "036",
+	type1: "Ice",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Turtacle ",
+        hp: 75,
+        attack: 75,
+        defense: 115,
+        speed: 10,
+	paldeck: "037",
+	type1: "Water",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Hangyu ",
+        hp: 80,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "038",
+	type1: "Ground",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Woolipop ",
+        hp: 70,
+        attack: 70,
+        defense: 90,
+        speed: 10,
+	paldeck: "039",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Mozzarina ",
+        hp: 90,
+        attack: 50,
+        defense: 80,
+        speed: 10,
+	paldeck: "040",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Azurobe ",
+        hp: 110,
+        attack: 100,
+        defense: 100,
+        speed: 10,
+	paldeck: "041",
+	type1: "Water",
+	type2: "Dragon",
+        rarity: "Epic"
+    },
+    {
+        species: "Sparkit ",
+        hp: 60,
+        attack: 75,
+        defense: 70,
+        speed: 10,
+	paldeck: "042",
+	type1: "Electric",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Kelpsea ",
+        hp: 70,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "043",
+	type1: "Water",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Ribunny ",
+        hp: 75,
+        attack: 65,
+        defense: 70,
+        speed: 10,
+	paldeck: "044",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Jelliette ",
+        hp: 75,
+        attack: 90,
+        defense: 70,
+        speed: 10,
+	paldeck: "045",
+	type1: "Water",
+	type2: "",
+        rarity: "Rare"
+    },
+
+
+
+
+
+
+
 ];
