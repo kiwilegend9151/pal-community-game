@@ -349,6 +349,41 @@ client.on("message", async (channel, tags, message, self) => {
         return;
     }
 
+    if (command === "!help" || command === "!help 1") {
+        await client.say(
+            currentChannel,
+            "📖 Pal Community Game Commands | " +
+            "!catch | !catch mega | !catch giga | !catch hyper | " +
+            "!collection | !profile | !paldex | !daily | " +
+            "!shop | !buy | !inventory | Use !help 2 or !help 3 for more."
+        );
+        return;
+    }
+
+    if (command === "!help 2") {
+        await client.say(
+            currentChannel,
+            "📖 Shop & Catching | " +
+            "Pal Sphere: 30% - 10 coins | " +
+            "Mega Sphere: 50% - 20 coins | " +
+            "Giga Sphere: 60% - 30 coins | " +
+            "Hyper Sphere: 70% - 50 coins | " +
+            "Buy with !buy <pal|mega|giga|hyper> <amount>"
+        );
+        return;
+    }
+
+    if (command === "!help 3") {
+        await client.say(
+            currentChannel,
+            "📖 Tips | Claim !daily every 24 hours | " +
+            "Buy spheres with !buy | " +
+            "Lucky pals are very rare | " +
+            "Complete your Paldeck with !paldex"
+        );
+        return;
+    }
+
     if (command === "!profile") {
         try {
             const player = await prisma.player.findUnique({
