@@ -4,7 +4,43 @@ type MonsterTemplate = {species: string;hp: number;attack: number;defense: numbe
 
 type ActiveMonster = {id: string;species: string;};
 
-const connectedChannels = new Map<string, tmi.Client>();const activeMonsters = new Map<string, ActiveMonster>();const catchAttempts = new Map<string, Set<string>>();const successfulCatchers = new Map<string, string[]>();const catchLocks = new Set<string>();const despawnTimers = new Map<string, NodeJS.Timeout>();const DAILY_REWARD = 100;const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;const DESPAWN_TIME = 60 * 1000;const CATCH_CHANCE = 0.5;const XP_REWARD = 50;const COIN_REWARD = 10;
+const connectedChannels = new Map<string, tmi.Client>();
+const activeMonsters = new Map<string, ActiveMonster>();
+const catchAttempts = new Map<string, Set<string>>();
+const successfulCatchers = new Map<string, string[]>();
+const catchLocks = new Set<string>();
+const despawnTimers = new Map<string, NodeJS.Timeout>();
+
+const DAILY_REWARD = 100;
+const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
+const DESPAWN_TIME = 60 * 1000;
+const XP_REWARD = 50;
+const COIN_REWARD = 10;
+
+type SphereType = "pal" | "mega" | "giga" | "hyper";
+
+const SPHERES = {
+    pal: {
+        displayName: "Pal Sphere",
+        catchChance: 0.30,
+        price: 10
+    },
+    mega: {
+        displayName: "Mega Sphere",
+        catchChance: 0.50,
+        price: 20
+    },
+    giga: {
+        displayName: "Giga Sphere",
+        catchChance: 0.60,
+        price: 30
+    },
+    hyper: {
+        displayName: "Hyper Sphere",
+        catchChance: 0.70,
+        price: 50
+    }
+} as const;
 
 function normalizeChannel(channelName: string): string {return channelName.replace(/^#/, "").trim().toLowerCase();}
 
@@ -128,22 +164,142 @@ async function clearActiveEncounter(channelName: string): Promise<void> {
 
 function getRandomMonster(): MonsterTemplate {return monsterTemplates[Math.floor(Math.random() * monsterTemplates.length)];}
 
-async function awardPlayer(playerId: string,currentXp: number,currentLevel: number,currentCoins: number) {let xp = currentXp + XP_REWARD;let level = currentLevel;
+async function awardPlayer(
+    playerId: string,
+    currentXp: number,
+    currentLevel: number
+) {
+    let xp = currentXp + XP_REWARD;
+    let level = currentLevel;
 
-while (xp >= level * 100) {
-    xp -= level * 100;
-    level++;
+    while (xp >= level * 100) {
+        xp -= level * 100;
+        level++;
+    }
+
+    return prisma.player.update({
+        where: { id: playerId },
+        data: {
+            xp,
+            level,
+            coins: {
+                increment: COIN_REWARD
+            }
+        }
+    });
 }
 
-return prisma.player.update({
-    where: { id: playerId },
-    data: {
-        xp,
-        level,
-        coins: currentCoins + COIN_REWARD
-    }
-});
+async function buySpheres(
+    playerId: string,
+    sphereType: SphereType,
+    quantity: number,
+    totalPrice: number
+): Promise<boolean> {
+    const commonWhere = {
+        id: playerId,
+        coins: {
+            gte: totalPrice
+        }
+    };
 
+    let result;
+
+    switch (sphereType) {
+        case "pal":
+            result = await prisma.player.updateMany({
+                where: commonWhere,
+                data: {
+                    coins: { decrement: totalPrice },
+                    palSpheres: { increment: quantity }
+                }
+            });
+            break;
+        case "mega":
+            result = await prisma.player.updateMany({
+                where: commonWhere,
+                data: {
+                    coins: { decrement: totalPrice },
+                    megaSpheres: { increment: quantity }
+                }
+            });
+            break;
+        case "giga":
+            result = await prisma.player.updateMany({
+                where: commonWhere,
+                data: {
+                    coins: { decrement: totalPrice },
+                    gigaSpheres: { increment: quantity }
+                }
+            });
+            break;
+        case "hyper":
+            result = await prisma.player.updateMany({
+                where: commonWhere,
+                data: {
+                    coins: { decrement: totalPrice },
+                    hyperSpheres: { increment: quantity }
+                }
+            });
+            break;
+    }
+
+    return result.count === 1;
+}
+
+async function useSphere(
+    playerId: string,
+    sphereType: SphereType
+): Promise<boolean> {
+    let result;
+
+    switch (sphereType) {
+        case "pal":
+            result = await prisma.player.updateMany({
+                where: {
+                    id: playerId,
+                    palSpheres: { gte: 1 }
+                },
+                data: {
+                    palSpheres: { decrement: 1 }
+                }
+            });
+            break;
+        case "mega":
+            result = await prisma.player.updateMany({
+                where: {
+                    id: playerId,
+                    megaSpheres: { gte: 1 }
+                },
+                data: {
+                    megaSpheres: { decrement: 1 }
+                }
+            });
+            break;
+        case "giga":
+            result = await prisma.player.updateMany({
+                where: {
+                    id: playerId,
+                    gigaSpheres: { gte: 1 }
+                },
+                data: {
+                    gigaSpheres: { decrement: 1 }
+                }
+            });
+            break;
+        case "hyper":
+            result = await prisma.player.updateMany({
+                where: {
+                    id: playerId,
+                    hyperSpheres: { gte: 1 }
+                },
+                data: {
+                    hyperSpheres: { decrement: 1 }
+                }
+            });
+            break;
+    }
+
+    return result.count === 1;
 }
 
 export async function connectStreamer(channelName: string) {const normalizedChannel = normalizeChannel(channelName);
@@ -363,6 +519,138 @@ return;
 
 }
 
+    if (command === "!shop") {
+        await client.say(
+            currentChannel,
+            "🛒 Sphere Shop | " +
+            "Pal Sphere: 10 coins (30%) | " +
+            "Mega Sphere: 20 coins (50%) | " +
+            "Giga Sphere: 30 coins (60%) | " +
+            "Hyper Sphere: 50 coins (70%). " +
+            "Buy with !buy <pal|mega|giga|hyper> <amount>"
+        );
+        return;
+    }
+
+    if (command === "!inventory" || command === "!inv") {
+        try {
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId: viewerTwitchId
+                }
+            });
+
+            if (!player) {
+                await client.say(
+                    currentChannel,
+                    `🎒 ${viewerName}, you do not have an inventory yet.`
+                );
+                return;
+            }
+
+            await client.say(
+                currentChannel,
+                `🎒 ${player.username}'s Inventory | ` +
+                `Pal: ${player.palSpheres} | ` +
+                `Mega: ${player.megaSpheres} | ` +
+                `Giga: ${player.gigaSpheres} | ` +
+                `Hyper: ${player.hyperSpheres} | ` +
+                `Coins: ${player.coins}`
+            );
+        } catch (error) {
+            console.error("Inventory command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, your inventory could not be loaded.`
+            );
+        }
+
+        return;
+    }
+
+    if (command.startsWith("!buy")) {
+        try {
+            const parts = command.split(/\s+/);
+            const sphereType = parts[1] as SphereType | undefined;
+            const quantity = Number(parts[2] ?? "1");
+
+            if (!sphereType || !(sphereType in SPHERES)) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, use !buy <pal|mega|giga|hyper> <amount>.`
+                );
+                return;
+            }
+
+            if (
+                !Number.isInteger(quantity) ||
+                quantity < 1 ||
+                quantity > 100
+            ) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, choose an amount from 1 to 100.`
+                );
+                return;
+            }
+
+            const sphere = SPHERES[sphereType];
+            const totalPrice = sphere.price * quantity;
+
+            const player = await prisma.player.upsert({
+                where: {
+                    twitchId: viewerTwitchId
+                },
+                update: {
+                    username: viewerName
+                },
+                create: {
+                    twitchId: viewerTwitchId,
+                    username: viewerName
+                }
+            });
+
+            const purchased = await buySpheres(
+                player.id,
+                sphereType,
+                quantity,
+                totalPrice
+            );
+
+            if (!purchased) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you need ${totalPrice} coins to buy ` +
+                    `${quantity} ${sphere.displayName}${quantity === 1 ? "" : "s"}.`
+                );
+                return;
+            }
+
+            const updatedPlayer = await prisma.player.findUnique({
+                where: {
+                    id: player.id
+                }
+            });
+
+            await client.say(
+                currentChannel,
+                `🛒 ${viewerName} bought ${quantity} ` +
+                `${sphere.displayName}${quantity === 1 ? "" : "s"} for ` +
+                `${totalPrice} coins. Balance: ${updatedPlayer?.coins ?? 0} coins.`
+            );
+        } catch (error) {
+            console.error("Buy command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, that purchase could not be completed.`
+            );
+        }
+
+        return;
+    }
+
     if (command === "!daily") {
         try {
             const player = await prisma.player.upsert({
@@ -476,7 +764,26 @@ return;
         return;
     }
 
-    if (command !== "!catch") {
+    const catchParts = command.split(/\s+/);
+
+    if (catchParts[0] !== "!catch") {
+        return;
+    }
+
+    let sphereType: SphereType;
+
+    if (catchParts.length === 1) {
+        sphereType = "pal";
+    } else if (
+        catchParts.length === 2 &&
+        catchParts[1] in SPHERES
+    ) {
+        sphereType = catchParts[1] as SphereType;
+    } else {
+        await client.say(
+            currentChannel,
+            `❌ ${viewerName}, use !catch, !catch mega, !catch giga, or !catch hyper.`
+        );
         return;
     }
 
@@ -512,34 +819,51 @@ return;
     }
 
     catchLocks.add(viewerLock);
-    attemptedViewers.add(viewerTwitchId);
 
     try {
-        const catchRoll = Math.random();
-
-        console.log(
-            `${viewerName} catch roll: ${catchRoll.toFixed(2)} / ${CATCH_CHANCE}`
-        );
-
-        if (catchRoll >= CATCH_CHANCE) {
-            await client.say(
-                currentChannel,
-                `💨 ${viewerName} tried to catch ${monster.species}, but failed!`
-            );
-            return;
-        }
+        const sphere = SPHERES[sphereType];
 
         const player = await prisma.player.upsert({
-            where: { twitchId: viewerTwitchId },
-            update: { username: viewerName },
+            where: {
+                twitchId: viewerTwitchId
+            },
+            update: {
+                username: viewerName
+            },
             create: {
                 twitchId: viewerTwitchId,
                 username: viewerName
             }
         });
 
+        const sphereUsed = await useSphere(player.id, sphereType);
+
+        if (!sphereUsed) {
+            await client.say(
+                currentChannel,
+                `❌ ${viewerName}, you do not have a ${sphere.displayName}. ` +
+                `Buy one with !buy ${sphereType} 1.`
+            );
+            return;
+        }
+
+        attemptedViewers.add(viewerTwitchId);
+
+        const catchRoll = Math.random();
+
+        console.log(
+            `${viewerName} used ${sphere.displayName}: ` +
+            `${catchRoll.toFixed(2)} / ${sphere.catchChance}`
+        );
+
+        if (catchRoll >= sphere.catchChance) {
+            return;
+        }
+
         const wildMonster = await prisma.monster.findUnique({
-            where: { id: monster.id }
+            where: {
+                id: monster.id
+            }
         });
 
         if (!wildMonster || wildMonster.ownerId) {
@@ -568,11 +892,20 @@ return;
             }
         });
 
+        const refreshedPlayer = await prisma.player.findUnique({
+            where: {
+                id: player.id
+            }
+        });
+
+        if (!refreshedPlayer) {
+            throw new Error("Player disappeared before rewards were awarded");
+        }
+
         const updatedPlayer = await awardPlayer(
             player.id,
-            player.xp,
-            player.level,
-            player.coins
+            refreshedPlayer.xp,
+            refreshedPlayer.level
         );
 
         const catchers = successfulCatchers.get(currentChannel) ?? [];
@@ -580,17 +913,20 @@ return;
         successfulCatchers.set(currentChannel, catchers);
 
         const levelMessage =
-            updatedPlayer.level > player.level
+            updatedPlayer.level > refreshedPlayer.level
                 ? ` and reached level ${updatedPlayer.level}`
                 : "";
 
         console.log(
             `${viewerName} caught ${monster.species} (${caughtMonster.id}) ` +
-            `in ${currentChannel}${levelMessage}`
+            `with ${sphere.displayName} in ${currentChannel}${levelMessage}`
         );
     } catch (error) {
         console.error("Catch failed:", error);
-        attemptedViewers.delete(viewerTwitchId);
+
+        if (!attemptedViewers.has(viewerTwitchId)) {
+            attemptedViewers.delete(viewerTwitchId);
+        }
 
         await client.say(
             currentChannel,
@@ -687,7 +1023,7 @@ try {
         await client.say(
             normalizedChannel,
             `🐾 A wild${shinyText} ${monster.species} appeared! ` +
-            `Everyone has 60 seconds to type !catch!`
+            `Use !catch, !catch mega, !catch giga, or !catch hyper within 60 seconds!`
         );
     }
 

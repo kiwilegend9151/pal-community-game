@@ -12,10 +12,15 @@ model Player {
   twitchId String @unique
   username String
 
-  level Int @default(1)
-  xp    Int @default(0)
-  coins Int @default(100)
+  level       Int       @default(1)
+  xp          Int       @default(0)
+  coins       Int       @default(100)
   lastDailyAt DateTime?
+
+  palSpheres   Int @default(0)
+  megaSpheres  Int @default(0)
+  gigaSpheres  Int @default(0)
+  hyperSpheres Int @default(0)
 
   monsters Monster[]
 
@@ -23,37 +28,38 @@ model Player {
 }
 
 model Monster {
-  id         String   @id @default(uuid())
-  species    String
-  paldeck    String?
-  type1      String?
-  type2      String?
-  level      Int
-  hp         Int
-  attack     Int
-  defense    Int
-  speed      Int
-  rarity     String
-  shiny      Boolean  @default(false)
+  id      String @id @default(uuid())
+  species String
+  paldeck String?
+  type1   String?
+  type2   String?
+  level   Int
+  hp      Int
+  attack  Int
+  defense Int
+  speed   Int
+  rarity  String
+  shiny   Boolean @default(false)
 
-  ownerId    String?
-  owner      Player?  @relation(fields: [ownerId], references: [id])
+  ownerId String?
+  owner   Player? @relation(fields: [ownerId], references: [id])
 
   streamerId String?
   streamer   Streamer? @relation(fields: [streamerId], references: [id])
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 }
+
 model Streamer {
-  id          String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  twitchId    String   @unique
-  channelName String   @unique
+  twitchId    String @unique
+  channelName String @unique
 
-  live        Boolean  @default(true)
-  lastSpawn   DateTime?
+  live      Boolean   @default(true)
+  lastSpawn DateTime?
 
-  monsters    Monster[]
+  monsters Monster[]
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 }
