@@ -494,7 +494,171 @@ export const monsterTemplates = [
 	type2: "",
         rarity: "Rare"
     },
-
+    {
+        species: "Jellroy ",
+        hp: 90,
+        attack: 75,
+        defense: 75,
+        speed: 10,
+	paldeck: "046",
+	type1: "Water",
+	type2: "Dark",
+        rarity: "Rare"
+    },
+    {
+        species: "Amione ",
+        hp: 65,
+        attack: 70,
+        defense: 65,
+        speed: 10,
+	paldeck: "047",
+	type1: "Water",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Gloopie ",
+        hp: 70,
+        attack: 85,
+        defense: 70,
+        speed: 10,
+	paldeck: "048",
+	type1: "Water",
+	type2: "Dark",
+        rarity: "Epic"
+    },
+    {
+        species: "Galeclaw ",
+        hp: 75,
+        attack: 85,
+        defense: 60,
+        speed: 10,
+	paldeck: "049",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Wispaw ",
+        hp: 85,
+        attack: 95,
+        defense: 70,
+        speed: 10,
+	paldeck: "050",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Nitewing ",
+        hp: 100,
+        attack: 95,
+        defense: 80,
+        speed: 10,
+	paldeck: "051",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Tombat ",
+        hp: 95,
+        attack: 95,
+        defense: 80,
+        speed: 10,
+	paldeck: "052",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Tocotoco ",
+        hp: 60,
+        attack: 75,
+        defense: 70,
+        speed: 10,
+	paldeck: "053",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Univolt ",
+        hp: 80,
+        attack: 105,
+        defense: 105,
+        speed: 10,
+	paldeck: "054",
+	type1: "Electric",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Gobfin ",
+        hp: 90,
+        attack: 90,
+        defense: 75,
+        speed: 10,
+	paldeck: "055",
+	type1: "Water",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Loupmoon ",
+        hp: 80,
+        attack: 100,
+        defense: 80,
+        speed: 10,
+	paldeck: "056",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Cawgnito ",
+        hp: 75,
+        attack: 95,
+        defense: 80,
+        speed: 10,
+	paldeck: "057",
+	type1: "Dark",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Arsox ",
+        hp: 85,
+        attack: 95,
+        defense: 95,
+        speed: 10,
+	paldeck: "058",
+	type1: "Fire",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Muffly ",
+        hp: 60,
+        attack: 80,
+        defense: 55,
+        speed: 10,
+	paldeck: "059",
+	type1: "Ice",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Bristla ",
+        hp: 80,
+        attack: 80,
+        defense: 80,
+        speed: 10,
+	paldeck: "60",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
 
 
 
