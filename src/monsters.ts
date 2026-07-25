@@ -164,5 +164,169 @@ export const monsterTemplates = [
 	type2: "",
         rarity: "Common"
     },
-
+    {
+        species: "Depresso ",
+        hp: 70,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "016",
+	type1: "Dark",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Pengullet ",
+        hp: 70,
+        attack: 75,
+        defense: 70,
+        speed: 10,
+	paldeck: "017",
+	type1: "Water",
+	type2: "Ice",
+        rarity: "Common"
+    },
+    {
+        species: "Penking ",
+        hp: 95,
+        attack: 95,
+        defense: 95,
+        speed: 10,
+	paldeck: "018",
+	type1: "Water",
+	type2: "Ice",
+        rarity: "Rare"
+    },
+    {
+        species: "Hoocrates ",
+        hp: 70,
+        attack: 70,
+        defense: 80,
+        speed: 10,
+	paldeck: "019",
+	type1: "Dark",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Melpaca ",
+        hp: 90,
+        attack: 75,
+        defense: 90,
+        speed: 10,
+	paldeck: "020",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Melpaca ",
+        hp: 120,
+        attack: 85,
+        defense: 90,
+        speed: 10,
+	paldeck: "021",
+	type1: "Neutral",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Daedream ",
+        hp: 70,
+        attack: 75,
+        defense: 60,
+        speed: 10,
+	paldeck: "022",
+	type1: "Dark",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Tanzee ",
+        hp: 80,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "023",
+	type1: "Grass",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Nox ",
+        hp: 75,
+        attack: 85,
+        defense: 70,
+        speed: 10,
+	paldeck: "024",
+	type1: "Dark",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Flambelle ",
+        hp: 60,
+        attack: 70,
+        defense: 80,
+        speed: 10,
+	paldeck: "025",
+	type1: "Fire",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Rooby ",
+        hp: 75,
+        attack: 70,
+        defense: 75,
+        speed: 10,
+	paldeck: "026",
+	type1: "Fire",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Mau ",
+        hp: 70,
+        attack: 60,
+        defense: 70,
+        speed: 10,
+	paldeck: "027",
+	type1: "Dark",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Rushroar ",
+        hp: 80,
+        attack: 70,
+        defense: 70,
+        speed: 10,
+	paldeck: "028",
+	type1: "Ground",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Foxparks ",
+        hp: 65,
+        attack: 75,
+        defense: 70,
+        speed: 10,
+	paldeck: "029",
+	type1: "Fire",
+	type2: "",
+        rarity: "Common"
+    },
+    {
+        species: "Killamari ",
+        hp: 60,
+        attack: 60,
+        defense: 70,
+        speed: 10,
+	paldeck: "030",
+	type1: "Dark",
+	type2: "",
+        rarity: "Rare"
+    },
 ];
