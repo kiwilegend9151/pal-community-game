@@ -8,6 +8,124 @@ const connectedChannels = new Map<string, tmi.Client>();const activeMonsters = n
 
 function normalizeChannel(channelName: string): string {return channelName.replace(/^#/, "").trim().toLowerCase();}
 
+let twitchAppAccessToken: string | null = null;
+let twitchAppAccessTokenExpiresAt = 0;
+
+async function getTwitchAppAccessToken(): Promise<string> {
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        throw new Error("TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET is missing");
+    }
+
+    if (
+        twitchAppAccessToken &&
+        Date.now() < twitchAppAccessTokenExpiresAt
+    ) {
+        return twitchAppAccessToken;
+    }
+
+    const tokenResponse = await fetch(
+        "https://id.twitch.tv/oauth2/token",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                client_id: clientId,
+                client_secret: clientSecret,
+                grant_type: "client_credentials"
+            })
+        }
+    );
+
+    if (!tokenResponse.ok) {
+        const responseText = await tokenResponse.text();
+
+        throw new Error(
+            `Twitch token request failed (${tokenResponse.status}): ${responseText}`
+        );
+    }
+
+    const tokenData = await tokenResponse.json() as {
+        access_token: string;
+        expires_in: number;
+    };
+
+    twitchAppAccessToken = tokenData.access_token;
+    twitchAppAccessTokenExpiresAt =
+        Date.now() + Math.max(0, tokenData.expires_in - 60) * 1000;
+
+    return twitchAppAccessToken;
+}
+
+async function isStreamerLive(channelName: string): Promise<boolean> {
+    try {
+        const clientId = process.env.TWITCH_CLIENT_ID;
+
+        if (!clientId) {
+            throw new Error("TWITCH_CLIENT_ID is missing");
+        }
+
+        const appAccessToken = await getTwitchAppAccessToken();
+        const streamsUrl = new URL("https://api.twitch.tv/helix/streams");
+
+        streamsUrl.searchParams.set("user_login", channelName);
+
+        const streamResponse = await fetch(streamsUrl, {
+            headers: {
+                "Client-Id": clientId,
+                Authorization: `Bearer ${appAccessToken}`
+            }
+        });
+
+        if (!streamResponse.ok) {
+            const responseText = await streamResponse.text();
+
+            throw new Error(
+                `Twitch live check failed (${streamResponse.status}): ${responseText}`
+            );
+        }
+
+        const streamData = await streamResponse.json() as {
+            data: Array<{ type: string }>;
+        };
+
+        return streamData.data.some((stream) => stream.type === "live");
+    } catch (error) {
+        console.error(`Could not check whether ${channelName} is live:`, error);
+
+        // Fail closed so an API problem does not create offline encounters.
+        return false;
+    }
+}
+
+async function clearActiveEncounter(channelName: string): Promise<void> {
+    const currentTimer = despawnTimers.get(channelName);
+
+    if (currentTimer) {
+        clearTimeout(currentTimer);
+        despawnTimers.delete(channelName);
+    }
+
+    const currentMonster = activeMonsters.get(channelName);
+
+    if (currentMonster) {
+        await prisma.monster.deleteMany({
+            where: {
+                id: currentMonster.id,
+                ownerId: null
+            }
+        });
+    }
+
+    activeMonsters.delete(channelName);
+    catchAttempts.delete(channelName);
+    successfulCatchers.delete(channelName);
+}
+
 function getRandomMonster(): MonsterTemplate {return monsterTemplates[Math.floor(Math.random() * monsterTemplates.length)];}
 
 async function awardPlayer(playerId: string,currentXp: number,currentLevel: number,currentCoins: number) {let xp = currentXp + XP_REWARD;let level = currentLevel;
@@ -506,6 +624,14 @@ try {
 
     if (!streamer) {
         throw new Error(`Streamer record not found for ${normalizedChannel}`);
+    }
+
+    const streamerIsLive = await isStreamerLive(normalizedChannel);
+
+    if (!streamerIsLive) {
+        await clearActiveEncounter(normalizedChannel);
+        console.log(`Skipped spawn because ${normalizedChannel} is offline`);
+        return null;
     }
 
     if (!connectedChannels.has(normalizedChannel)) {
