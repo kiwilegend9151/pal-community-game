@@ -32,7 +32,7 @@ model PaldexEntry {
   id           String   @id @default(uuid())
   playerId     String
   species      String
-  paldeck      String
+  paldeck      String?
   rarity       String
   hasLucky     Boolean  @default(false)
   discoveredAt DateTime @default(now())
