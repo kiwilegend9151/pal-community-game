@@ -2,29 +2,30 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
+import path from "path";
 import { Server } from "socket.io";
+
 import gameRoutes from "./routes/game";
 import playerRoutes from "./routes/player";
 import monsterRoutes from "./routes/monster";
 import streamerRoutes from "./routes/streamer";
-import { startSpawnTimer } from "./services/spawnTimer";
 import extensionRoutes from "./routes/extension";
-import path from "path";
-
+import { startSpawnTimer } from "./services/spawnTimer";
 
 dotenv.config();
 
 const app = express();
 
-const extensionPath = path.join(process.cwd(), "extension");
+const extensionPath = path.join(process.cwd(), "..", "extension", "dist");
+
+app.use(cors());
+app.use(express.json());
 
 app.use(
     "/extension-assets",
     express.static(extensionPath)
 );
 
-app.use(cors());
-app.use(express.json());
 app.use("/game", gameRoutes);
 app.use("/players", playerRoutes);
 app.use("/monsters", monsterRoutes);
