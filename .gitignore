@@ -24,3 +24,12 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+# Twitch extension
+extension/node_modules/
+extension/dist/
+extension/.env
+extension/*.zip
+extension/zipcheck/
+extension/zipverify/
+extension/*.tsbuildinfo
+twitch-monsters-panel.zip
