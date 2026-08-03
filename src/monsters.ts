@@ -1314,7 +1314,7 @@ export const monsterTemplates = [
         attack: 120,
         defense: 105,
         speed: 10,
-	paldeck: "120
+	paldeck: "120",
 	type1: "Dark",
 	type2: "Ground",
         rarity: "Legendary"
@@ -1325,7 +1325,7 @@ export const monsterTemplates = [
         attack: 120,
         defense: 100,
         speed: 10,
-	paldeck: "121
+	paldeck: "121",
 	type1: "Dragon",
 	type2: "Water",
         rarity: "Legendary"
