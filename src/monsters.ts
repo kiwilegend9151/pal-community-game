@@ -220,7 +220,7 @@ export const monsterTemplates = [
         rarity: "Common"
     },
     {
-        species: "Melpaca ",
+        species: "Kingpaca ",
         hp: 120,
         attack: 85,
         defense: 90,
@@ -536,7 +536,7 @@ export const monsterTemplates = [
 	paldeck: "049",
 	type1: "Neutral",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Wispaw ",
@@ -558,7 +558,7 @@ export const monsterTemplates = [
 	paldeck: "051",
 	type1: "Neutral",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Tombat ",
@@ -569,7 +569,7 @@ export const monsterTemplates = [
 	paldeck: "052",
 	type1: "Dark",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Tocotoco ",
@@ -580,7 +580,7 @@ export const monsterTemplates = [
 	paldeck: "053",
 	type1: "Neutral",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Univolt ",
@@ -624,7 +624,7 @@ export const monsterTemplates = [
 	paldeck: "057",
 	type1: "Dark",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Arsox ",
@@ -657,7 +657,7 @@ export const monsterTemplates = [
 	paldeck: "060",
 	type1: "Grass",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Cinnamoth ",
@@ -668,7 +668,7 @@ export const monsterTemplates = [
 	paldeck: "061",
 	type1: "Grass",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Puffolt ",
@@ -701,7 +701,7 @@ export const monsterTemplates = [
 	paldeck: "064",
 	type1: "Fire",
 	type2: "Dark",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Felbat ",
@@ -734,7 +734,7 @@ export const monsterTemplates = [
 	paldeck: "067",
 	type1: "Grass",
 	type2: "",
-        rarity: "Epic"
+        rarity: "Rarw"
     },
     {
         species: "Elizabee ",
@@ -745,7 +745,7 @@ export const monsterTemplates = [
 	paldeck: "068",
 	type1: "Grass",
 	type2: "",
-        rarity: "Legendary"
+        rarity: "Epic"
     },
     {
         species: "Lovander ",
@@ -789,7 +789,7 @@ export const monsterTemplates = [
 	paldeck: "072",
 	type1: "Ice",
 	type2: "Water",
-        rarity: "Epic"
+        rarity: "Rare"
     },
     {
         species: "Leezpunk ",
@@ -934,6 +934,442 @@ export const monsterTemplates = [
 	type2: "",
         rarity: "Epic"
     },
+    {
+        species: "Munchill ",
+        hp: 75,
+        attack: 80,
+        defense: 85,
+        speed: 10,
+	paldeck: "086",
+	type1: "Water",
+	type2: "Ice",
+        rarity: "Epic"
+    },
+    {
+        species: "Mammorest ",
+        hp: 150,
+        attack: 85,
+        defense: 90,
+        speed: 10,
+	paldeck: "087",
+	type1: "Grass",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Finsider ",
+        hp: 75,
+        attack: 85,
+        defense: 80,
+        speed: 10,
+	paldeck: "088",
+	type1: "Water",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Petallia ",
+        hp: 100,
+        attack: 95,
+        defense: 100,
+        speed: 10,
+	paldeck: "089",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Leafan ",
+        hp: 100,
+        attack: 115,
+        defense: 95,
+        speed: 10,
+	paldeck: "090",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Incineram ",
+        hp: 95,
+        attack: 100,
+        defense: 85,
+        speed: 10,
+	paldeck: "091",
+	type1: "Fire",
+	type2: "Dark",
+        rarity: "Epic"
+    },
+    {
+        species: "Dazzi ",
+        hp: 70,
+        attack: 80,
+        defense: 70,
+        speed: 10,
+	paldeck: "092",
+	type1: "Electric",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Pyrin ",
+        hp: 100,
+        attack: 95,
+        defense: 90,
+        speed: 10,
+	paldeck: "093",
+	type1: "Fire",
+	type2: "Dark",
+        rarity: "Epic"
+    },
+    {
+        species: "Relaxaurus ",
+        hp: 120,
+        attack: 115,
+        defense: 110,
+        speed: 10,
+	paldeck: "094",
+	type1: "Dragon",
+	type2: "Water",
+        rarity: "Epic"
+    },
+    {
+        species: "Foxcicle ",
+        hp: 90,
+        attack: 95,
+        defense: 105,
+        speed: 10,
+	paldeck: "095",
+	type1: "Ice",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Beakon ",
+        hp: 105,
+        attack: 115,
+        defense: 80,
+        speed: 10,
+	paldeck: "096",
+	type1: "Electric",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Ghangler ",
+        hp: 90,
+        attack: 125,
+        defense: 105,
+        speed: 10,
+	paldeck: "097",
+	type1: "Dark",
+	type2: "Water",
+        rarity: "Epic"
+    },
+    {
+        species: "Rayhound ",
+        hp: 90,
+        attack: 100,
+        defense: 80,
+        speed: 10,
+	paldeck: "098",
+	type1: "Electric",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Menasting ",
+        hp: 100,
+        attack: 100,
+        defense: 130,
+        speed: 10,
+	paldeck: "099",
+	type1: "Dark",
+	type2: "Ground",
+        rarity: "Epic"
+    },
+    {
+        species: "Needoll ",
+        hp: 75,
+        attack: 85,
+        defense: 70,
+        speed: 10,
+	paldeck: "100",
+	type1: "Grass",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Reindrix ",
+        hp: 100,
+        attack: 85,
+        defense: 110,
+        speed: 10,
+	paldeck: "101",
+	type1: "Ice",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Mossanda ",
+        hp: 100,
+        attack: 90,
+        defense: 90,
+        speed: 10,
+	paldeck: "102",
+	type1: "Grass",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Chillet ",
+        hp: 90,
+        attack: 80,
+        defense: 80,
+        speed: 10,
+	paldeck: "103",
+	type1: "Ice",
+	type2: "Dragon",
+        rarity: "Epic"
+    },
+    {
+        species: "Ragnahawk ",
+        hp: 95,
+        attack: 105,
+        defense: 120,
+        speed: 10,
+	paldeck: "104",
+	type1: "Fire",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Moldron ",
+        hp: 110,
+        attack: 125,
+        defense: 115,
+        speed: 10,
+	paldeck: "105",
+	type1: "Fire",
+	type2: "Ground",
+        rarity: "Epic"
+    },
+    {
+        species: "Palumba ",
+        hp: 105,
+        attack: 110,
+        defense: 115,
+        speed: 10,
+	paldeck: "106",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Digtoise ",
+        hp: 110,
+        attack: 125,
+        defense: 115,
+        speed: 10,
+	paldeck: "107",
+	type1: "Ground",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Broncherry ",
+        hp: 120,
+        attack: 90,
+        defense: 100,
+        speed: 10,
+	paldeck: "108",
+	type1: "Grass",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Dumud ",
+        hp: 100,
+        attack: 70,
+        defense: 95,
+        speed: 10,
+	paldeck: "109",
+	type1: "Ground",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Brahola ",
+        hp: 130,
+        attack: 95,
+        defense: 120,
+        speed: 10,
+	paldeck: "110",
+	type1: "Grass",
+	type2: "Ground",
+        rarity: "Rare"
+    },
+    {
+        species: "Kitsun ",
+        hp: 100,
+        attack: 115,
+        defense: 100,
+        speed: 10,
+	paldeck: "111",
+	type1: "Fire",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Blazehowl ",
+        hp: 105,
+        attack: 110,
+        defense: 80,
+        speed: 10,
+	paldeck: "112",
+	type1: "Fire",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Warsect ",
+        hp: 120,
+        attack: 100,
+        defense: 120,
+        speed: 10,
+	paldeck: "113",
+	type1: "Ground",
+	type2: "Grass",
+        rarity: "Legendary"
+    },
+    {
+        species: "Frostplume ",
+        hp: 110,
+        attack: 100,
+        defense: 100,
+        speed: 10,
+	paldeck: "114",
+	type1: "Ice",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Majex ",
+        hp: 110,
+        attack: 115,
+        defense: 90,
+        speed: 10,
+	paldeck: "115",
+	type1: "Dark",
+	type2: "Fire",
+        rarity: "Epic"
+    },
+    {
+        species: "Sibelyx ",
+        hp: 110,
+        attack: 90,
+        defense: 100,
+        speed: 10,
+	paldeck: "116",
+	type1: "Ice",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Maraith ",
+        hp: 75,
+        attack: 105,
+        defense: 80,
+        speed: 10,
+	paldeck: "117",
+	type1: "Dark",
+	type2: "",
+        rarity: "Rare"
+    },
+    {
+        species: "Shroomer ",
+        hp: 110,
+        attack: 80,
+        defense: 90,
+        speed: 10,
+	paldeck: "118",
+	type1: "Grass",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Icelyn ",
+        hp: 95,
+        attack: 115,
+        defense: 105,
+        speed: 10,
+	paldeck: "119",
+	type1: "Ice",
+	type2: "",
+        rarity: "Epic"
+    },
+    {
+        species: "Gildra ",
+        hp: 105,
+        attack: 120,
+        defense: 105,
+        speed: 10,
+	paldeck: "120
+	type1: "Dark",
+	type2: "Ground",
+        rarity: "Legendary"
+    },
+    {
+        species: "Jormuntide ",
+        hp: 130,
+        attack: 120,
+        defense: 100,
+        speed: 10,
+	paldeck: "121
+	type1: "Dragon",
+	type2: "Water",
+        rarity: "Legendary"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

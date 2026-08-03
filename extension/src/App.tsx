@@ -23,8 +23,11 @@ export default function App() {
   const [installState, setInstallState] =
     useState<InstallState>("installing");
 
-  const isConfigPage =
-    new URLSearchParams(window.location.search).get("anchor") === "config";
+const params = new URLSearchParams(window.location.search);
+
+const isConfigPage =
+  params.get("mode") === "config" ||
+  params.get("configure") === "true";
 
   const loadData = useCallback(async () => {
     setState("loading");
