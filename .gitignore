@@ -33,3 +33,5 @@ extension/zipcheck/
 extension/zipverify/
 extension/*.tsbuildinfo
 twitch-monsters-panel.zip
+
+extension/twitchtest/
