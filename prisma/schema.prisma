@@ -22,8 +22,13 @@ model Player {
   gigaSpheres  Int @default(0)
   hyperSpheres Int @default(0)
 
+  paldium Int @default(0)
+  wood    Int @default(0)
+  stone   Int @default(0)
+
   monsters      Monster[]
   paldexEntries PaldexEntry[]
+  expedition    Expedition?
 
   createdAt DateTime @default(now())
 }
@@ -64,11 +69,34 @@ model Monster {
   streamerId String?
   streamer   Streamer? @relation(fields: [streamerId], references: [id], onDelete: SetNull)
 
+  expedition Expedition?
+
   createdAt DateTime @default(now())
 
   @@index([ownerId])
   @@index([streamerId])
   @@index([species])
+}
+
+model Expedition {
+  id String @id @default(uuid())
+
+  playerId  String @unique
+  monsterId String @unique
+
+  startedAt   DateTime @default(now())
+  completesAt DateTime
+
+  coinReward      Int
+  palSphereReward Int
+  paldiumReward   Int
+  woodReward      Int
+  stoneReward     Int
+
+  player  Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  monster Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+
+  @@index([completesAt])
 }
 
 model Streamer {

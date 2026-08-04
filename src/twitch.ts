@@ -15,6 +15,28 @@ const DAILY_REWARD = 100;
 const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DESPAWN_TIME = 60 * 1000;
 const XP_REWARD = 50;
+const EXPEDITION_DURATION = 60 * 60 * 1000;
+
+function randomInteger(minimum: number, maximum: number): number {
+    return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
+}
+
+function formatRemainingTime(milliseconds: number): string {
+    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    }
+
+    if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+    }
+
+    return `${seconds}s`;
+}
 
 type SupportedRarity =
     | "Common"
@@ -449,7 +471,8 @@ client.on("message", async (channel, tags, message, self) => {
             "📖 Pal Community Game Commands | " +
             "!catch | !catch mega | !catch giga | !catch hyper | " +
             "!collection | !profile | !paldex | !daily | " +
-            "!shop | !buy | !inventory | Use !help 2 or !help 3 for more."
+            "!shop | !buy | !inventory | !expedition | " +
+	    "Use !help 2 or !help 3 for more."
         );
         return;
     }
@@ -691,8 +714,11 @@ if (command === "!dex" || command === "!paldex") {
                 `Pal: ${player.palSpheres} | ` +
                 `Mega: ${player.megaSpheres} | ` +
                 `Giga: ${player.gigaSpheres} | ` +
-                `Hyper: ${player.hyperSpheres} | ` +
-                `Coins: ${player.coins}`
+		`Hyper: ${player.hyperSpheres} | ` +
+		`Paldium: ${player.paldium} | ` +
+		`Wood: ${player.wood} | ` +
+		`Stone: ${player.stone} | ` +
+		`Coins: ${player.coins}`
             );
         } catch (error) {
             console.error("Inventory command failed:", error);
@@ -898,6 +924,341 @@ if (command === "!dex" || command === "!paldex") {
             );
         }
     
+        return;
+    }
+
+    if (
+        command === "!expedition" ||
+        command === "!expedition help"
+    ) {
+        await client.say(
+            currentChannel,
+            `🗺️ ${viewerName}, expedition commands: ` +
+            `!expedition send <pal name> | ` +
+            `!expedition status | ` +
+            `!expedition claim`
+        );
+
+        return;
+    }
+
+    if (command.startsWith("!expedition send ")) {
+        try {
+            const requestedSpecies = message
+                .trim()
+                .slice("!expedition send ".length)
+                .trim();
+
+            if (!requestedSpecies) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, use !expedition send <pal name>.`
+                );
+
+                return;
+            }
+
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId: viewerTwitchId
+                },
+                include: {
+                    expedition: {
+                        include: {
+                            monster: true
+                        }
+                    },
+                    monsters: {
+                        include: {
+                            expedition: true
+                        }
+                    }
+                }
+            });
+
+            if (!player) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you do not have a profile yet. ` +
+                    `Catch a pal first!`
+                );
+
+                return;
+            }
+
+            if (player.expedition) {
+                const remainingMilliseconds =
+                    player.expedition.completesAt.getTime() - Date.now();
+
+                if (remainingMilliseconds > 0) {
+                    await client.say(
+                        currentChannel,
+                        `⏳ ${viewerName}, ${player.expedition.monster.species} ` +
+                        `is already on an expedition. ` +
+                        `Time remaining: ${formatRemainingTime(remainingMilliseconds)}.`
+                    );
+                } else {
+                    await client.say(
+                        currentChannel,
+                        `🎒 ${viewerName}, ${player.expedition.monster.species} ` +
+                        `has returned. Use !expedition claim before starting another.`
+                    );
+                }
+
+                return;
+            }
+
+            const normalizedRequestedSpecies =
+                requestedSpecies.toLowerCase();
+
+            const selectedMonster = player.monsters.find(
+                (monster) =>
+                    monster.species.trim().toLowerCase() ===
+                        normalizedRequestedSpecies &&
+                    monster.expedition === null
+            );
+
+            if (!selectedMonster) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you do not own an available pal named ` +
+                    `${requestedSpecies}.`
+                );
+
+                return;
+            }
+
+            const startedAt = new Date();
+            const completesAt = new Date(
+                startedAt.getTime() + EXPEDITION_DURATION
+            );
+
+            const rewards = {
+                coinReward: randomInteger(25, 100),
+                palSphereReward: randomInteger(0, 3),
+                paldiumReward: randomInteger(1, 5),
+                woodReward: randomInteger(0, 5),
+                stoneReward: randomInteger(0, 5)
+            };
+
+            await prisma.expedition.create({
+                data: {
+                    playerId: player.id,
+                    monsterId: selectedMonster.id,
+                    startedAt,
+                    completesAt,
+                    ...rewards
+                }
+            });
+
+            await client.say(
+                currentChannel,
+                `🗺️ ${viewerName} sent ${selectedMonster.species} on a ` +
+                `1-hour expedition! Use !expedition status to check its progress.`
+            );
+        } catch (error) {
+            console.error("Expedition send command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, the expedition could not be started.`
+            );
+        }
+
+        return;
+    }
+
+    if (command === "!expedition status") {
+        try {
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId: viewerTwitchId
+                },
+                include: {
+                    expedition: {
+                        include: {
+                            monster: true
+                        }
+                    }
+                }
+            });
+
+            if (!player?.expedition) {
+                await client.say(
+                    currentChannel,
+                    `🗺️ ${viewerName}, you do not have an active expedition. ` +
+                    `Use !expedition send <pal name> to start one.`
+                );
+
+                return;
+            }
+
+            const remainingMilliseconds =
+                player.expedition.completesAt.getTime() - Date.now();
+
+            if (remainingMilliseconds > 0) {
+                await client.say(
+                    currentChannel,
+                    `⏳ ${player.expedition.monster.species} is exploring. ` +
+                    `Time remaining: ${formatRemainingTime(remainingMilliseconds)}.`
+                );
+            } else {
+                await client.say(
+                    currentChannel,
+                    `🎒 ${player.expedition.monster.species} has returned! ` +
+                    `Use !expedition claim to collect the rewards.`
+                );
+            }
+        } catch (error) {
+            console.error("Expedition status command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, the expedition status could not be loaded.`
+            );
+        }
+
+        return;
+    }
+
+    if (command === "!expedition claim") {
+        try {
+            const result = await prisma.$transaction(async (transaction) => {
+                const player = await transaction.player.findUnique({
+                    where: {
+                        twitchId: viewerTwitchId
+                    },
+                    include: {
+                        expedition: {
+                            include: {
+                                monster: true
+                            }
+                        }
+                    }
+                });
+
+                if (!player?.expedition) {
+                    return {
+                        status: "none" as const
+                    };
+                }
+
+                const expedition = player.expedition;
+                const remainingMilliseconds =
+                    expedition.completesAt.getTime() - Date.now();
+
+                if (remainingMilliseconds > 0) {
+                    return {
+                        status: "running" as const,
+                        monsterSpecies: expedition.monster.species,
+                        remainingMilliseconds
+                    };
+                }
+
+                /*
+                 * Only one request can delete this expedition.
+                 * This prevents two nearly simultaneous claim messages
+                 * from awarding the same rewards twice.
+                 */
+                const deletedExpedition =
+                    await transaction.expedition.deleteMany({
+                        where: {
+                            id: expedition.id,
+                            playerId: player.id,
+                            completesAt: {
+                                lte: new Date()
+                            }
+                        }
+                    });
+
+                if (deletedExpedition.count !== 1) {
+                    return {
+                        status: "already-claimed" as const
+                    };
+                }
+
+                await transaction.player.update({
+                    where: {
+                        id: player.id
+                    },
+                    data: {
+                        coins: {
+                            increment: expedition.coinReward
+                        },
+                        palSpheres: {
+                            increment: expedition.palSphereReward
+                        },
+                        paldium: {
+                            increment: expedition.paldiumReward
+                        },
+                        wood: {
+                            increment: expedition.woodReward
+                        },
+                        stone: {
+                            increment: expedition.stoneReward
+                        }
+                    }
+                });
+
+                return {
+                    status: "claimed" as const,
+                    monsterSpecies: expedition.monster.species,
+                    coinReward: expedition.coinReward,
+                    palSphereReward: expedition.palSphereReward,
+                    paldiumReward: expedition.paldiumReward,
+                    woodReward: expedition.woodReward,
+                    stoneReward: expedition.stoneReward
+                };
+            });
+
+            if (result.status === "none") {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you do not have an expedition to claim.`
+                );
+
+                return;
+            }
+
+            if (result.status === "running") {
+                await client.say(
+                    currentChannel,
+                    `⏳ ${viewerName}, ${result.monsterSpecies} is still exploring. ` +
+                    `Time remaining: ` +
+                    `${formatRemainingTime(result.remainingMilliseconds)}.`
+                );
+
+                return;
+            }
+
+            if (result.status === "already-claimed") {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, that expedition has already been claimed.`
+                );
+
+                return;
+            }
+
+            await client.say(
+                currentChannel,
+                `🎉 ${result.monsterSpecies} returned with ` +
+                `${result.coinReward} coins, ` +
+                `${result.palSphereReward} Pal Sphere` +
+                `${result.palSphereReward === 1 ? "" : "s"}, ` +
+                `${result.paldiumReward} Paldium, ` +
+                `${result.woodReward} Wood and ` +
+                `${result.stoneReward} Stone!`
+            );
+        } catch (error) {
+            console.error("Expedition claim command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, the expedition rewards could not be claimed.`
+            );
+        }
+
         return;
     }
 
