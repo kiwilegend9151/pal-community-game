@@ -405,6 +405,10 @@ if (!botUsername || !accessToken) {
     throw new Error("TWITCH_BOT_USERNAME or TWITCH_ACCESS_TOKEN is missing");
 }
 
+console.log(
+    `Creating Twitch client for ${normalizedChannel} (pid=${process.pid})`
+);
+
 const client = new tmi.Client({
     options: { debug: true },
     identity: {
@@ -415,12 +419,19 @@ const client = new tmi.Client({
 });
 
 client.on("message", async (channel, tags, message, self) => {
+    console.log(
+        `[CHAT] pid=${process.pid}`,
+        channel,
+        tags.username,
+        message,
+        new Date().toISOString()
+    );
+
     if (self) {
         return;
     }
 
-    const command = message.trim().toLowerCase();
-    const currentChannel = normalizeChannel(channel);
+    const command = message.trim().toLowerCase();    const currentChannel = normalizeChannel(channel);
 
     const viewerTwitchId = tags["user-id"];
     const viewerName =
@@ -1155,6 +1166,11 @@ client.on("disconnected", (reason) => {
 });
 
 await client.connect();
+
+console.log(
+    `Connected to ${normalizedChannel} (pid=${process.pid})`
+);
+
 connectedChannels.set(normalizedChannel, client);
 
 console.log(`Joined Twitch channel: ${normalizedChannel}`);
