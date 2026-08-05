@@ -65,6 +65,7 @@ const FIRST_PALDECK_BONUS: Record<
 
 type SphereType = "pal" | "mega" | "giga" | "hyper";
 
+
 const SPHERES = {
     pal: {
         displayName: "Pal Sphere",
@@ -87,6 +88,52 @@ const SPHERES = {
         price: 50
     }
 } as const;
+
+type CraftableSphere = SphereType;
+
+const CRAFTING_RECIPES: Record<
+    CraftableSphere,
+    {
+        displayName: string;
+        paldium: number;
+        wood: number;
+        stone: number;
+        playerField:
+            | "palSpheres"
+            | "megaSpheres"
+            | "gigaSpheres"
+            | "hyperSpheres";
+    }
+> = {
+    pal: {
+        displayName: "Pal Sphere",
+        paldium: 1,
+        wood: 0,
+        stone: 0,
+        playerField: "palSpheres"
+    },
+    mega: {
+        displayName: "Mega Sphere",
+        paldium: 1,
+        wood: 2,
+        stone: 2,
+        playerField: "megaSpheres"
+    },
+    giga: {
+        displayName: "Giga Sphere",
+        paldium: 2,
+        wood: 4,
+        stone: 4,
+        playerField: "gigaSpheres"
+    },
+    hyper: {
+        displayName: "Hyper Sphere",
+        paldium: 3,
+        wood: 5,
+        stone: 5,
+        playerField: "hyperSpheres"
+    }
+};
 
 function normalizeChannel(channelName: string): string {return channelName.replace(/^#/, "").trim().toLowerCase();}
 
@@ -726,6 +773,138 @@ if (command === "!dex" || command === "!paldex") {
             await client.say(
                 currentChannel,
                 `❌ Sorry ${viewerName}, your inventory could not be loaded.`
+            );
+        }
+
+        return;
+    }
+
+    if (command === "!craft" || command === "!craft help") {
+        await client.say(
+            currentChannel,
+            "🔨 Crafting Recipes | " +
+            "Pal: 2 Paldium + 1 Wood | " +
+            "Mega: 4 Paldium + 2 Wood + 1 Stone | " +
+            "Giga: 7 Paldium + 3 Wood + 3 Stone | " +
+            "Hyper: 12 Paldium + 5 Wood + 5 Stone | " +
+            "Use !craft <pal|mega|giga|hyper> <amount>"
+        );
+
+        return;
+    }
+
+    if (command.startsWith("!craft ")) {
+        try {
+            const parts = command.split(/\s+/);
+            const sphereType = parts[1] as CraftableSphere | undefined;
+            const quantity = Number(parts[2] ?? "1");
+
+            if (!sphereType || !(sphereType in CRAFTING_RECIPES)) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, use ` +
+                    `!craft <pal|mega|giga|hyper> <amount>.`
+                );
+
+                return;
+            }
+
+            if (
+                !Number.isInteger(quantity) ||
+                quantity < 1 ||
+                quantity > 100
+            ) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, choose an amount from 1 to 100.`
+                );
+
+                return;
+            }
+
+            const recipe = CRAFTING_RECIPES[sphereType];
+
+            const requiredPaldium = recipe.paldium * quantity;
+            const requiredWood = recipe.wood * quantity;
+            const requiredStone = recipe.stone * quantity;
+
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId: viewerTwitchId
+                }
+            });
+
+            if (!player) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you do not have a profile yet.`
+                );
+
+                return;
+            }
+
+            const sphereIncrement = {
+                [recipe.playerField]: {
+                    increment: quantity
+                }
+            };
+
+            const craftResult = await prisma.player.updateMany({
+                where: {
+                    id: player.id,
+                    paldium: {
+                        gte: requiredPaldium
+                    },
+                    wood: {
+                        gte: requiredWood
+                    },
+                    stone: {
+                        gte: requiredStone
+                    }
+                },
+                data: {
+                    paldium: {
+                        decrement: requiredPaldium
+                    },
+                    wood: {
+                        decrement: requiredWood
+                    },
+                    stone: {
+                        decrement: requiredStone
+                    },
+                    ...sphereIncrement
+                }
+            });
+
+            if (craftResult.count !== 1) {
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, you need ` +
+                    `${requiredPaldium} Paldium, ` +
+                    `${requiredWood} Wood and ` +
+                    `${requiredStone} Stone to craft ` +
+                    `${quantity} ${recipe.displayName}` +
+                    `${quantity === 1 ? "" : "s"}.`
+                );
+
+                return;
+            }
+
+            await client.say(
+                currentChannel,
+                `🔨 ${viewerName} crafted ${quantity} ` +
+                `${recipe.displayName}` +
+                `${quantity === 1 ? "" : "s"} using ` +
+                `${requiredPaldium} Paldium, ` +
+                `${requiredWood} Wood and ` +
+                `${requiredStone} Stone!`
+            );
+        } catch (error) {
+            console.error("Craft command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, crafting could not be completed.`
             );
         }
 
