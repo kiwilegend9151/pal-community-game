@@ -26,12 +26,26 @@ export function initialiseTwitch(
 
   const helper = window.Twitch?.ext;
 
+  console.log("[TWITCH] helper:", helper);
+
   if (!helper) {
+    console.error("[TWITCH] Extension helper is missing");
     throw new Error("Twitch Extension helper could not be loaded");
   }
 
+  console.log("[TWITCH] registering onAuthorized");
+
   helper.onAuthorized((auth) => {
+    console.log("[TWITCH] AUTHORIZED", {
+      channelId: auth.channelId,
+      userId: auth.userId,
+      hasToken: Boolean(auth.token)
+    });
+
     extensionToken = auth.token;
+
+    console.log("[TWITCH] calling App callback");
+
     onAuthorised(auth);
   });
 }

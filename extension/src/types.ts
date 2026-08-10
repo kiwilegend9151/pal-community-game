@@ -33,6 +33,9 @@ export interface PlayerSummary {
   megaSpheres: number;
   gigaSpheres: number;
   hyperSpheres: number;
+  paldium: number;
+  wood: number;
+  stone: number;
 }
 
 export interface PaldeckSummary {

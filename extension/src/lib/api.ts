@@ -13,6 +13,19 @@ type ErrorPayload = {
   error?: string;
 };
 
+type InstallResponse = {
+  message: string;
+};
+
+type ShopPurchaseResponse = {
+  message: string;
+  coins: number;
+  palSpheres: number;
+  megaSpheres: number;
+  gigaSpheres: number;
+  hyperSpheres: number;
+};
+
 async function readError(response: Response): Promise<string> {
   const payload = (await response.json().catch(() => null)) as
     | ErrorPayload
@@ -35,12 +48,14 @@ async function request<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function post<T>(path: string): Promise<T> {
+async function post<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${getExtensionToken()}`
-    }
+      Authorization: `Bearer ${getExtensionToken()}`,
+      "Content-Type": "application/json"
+    },
+    body: body === undefined ? undefined : JSON.stringify(body)
   });
 
   if (!response.ok) {
@@ -50,13 +65,70 @@ async function post<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-type InstallResponse = {
-  message: string;
+export const extensionApi = {
+  install: () =>
+    post<InstallResponse>("/extension/install"),
+
+  getProfile: () =>
+    request<PlayerSummary>("/extension/me"),
+
+  getPals: () =>
+    request<{ total: number; pals: Pal[] }>("/extension/pals"),
+
+  getPaldex: () =>
+    request<PaldeckSummary>("/extension/paldex"),
+
+  buySphere: (
+    sphereType: "pal" | "mega" | "giga" | "hyper",
+    quantity: number
+  ) =>
+    post<ShopPurchaseResponse>("/extension/shop/buy", {
+      sphereType,
+      quantity
+    }),
+
+  getExpedition: () =>
+    request<ExpeditionStatusResponse>(
+      "/extension/expedition"
+    ),
+
+  sendExpedition: (monsterId: string) =>
+    post<{ message: string; completesAt: string }>(
+      "/extension/expedition/send",
+      {
+        monsterId
+      }
+    ),
+
+  claimExpedition: () =>
+    post<ExpeditionClaimResponse>(
+      "/extension/expedition/claim"
+    )
 };
 
-export const extensionApi = {
-  install: () => post<InstallResponse>("/extension/install"),
-  getProfile: () => request<PlayerSummary>("/extension/me"),
-  getPals: () => request<{ total: number; pals: Pal[] }>("/extension/pals"),
-  getPaldex: () => request<PaldeckSummary>("/extension/paldex")
+export type ExpeditionStatusResponse =
+  | {
+      active: false;
+    }
+  | {
+      active: true;
+      completed: boolean;
+      expedition: {
+        id: string;
+        monsterId: string;
+        species: string;
+        shiny: boolean;
+        startedAt: string;
+        completesAt: string;
+      };
+    };
+
+export type ExpeditionClaimResponse = {
+  species: string;
+  coinReward: number;
+  palSphereReward: number;
+  paldiumReward: number;
+  woodReward: number;
+  stoneReward: number;
+  player: PlayerSummary;
 };

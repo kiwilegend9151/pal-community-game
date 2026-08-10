@@ -16,6 +16,7 @@ const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DESPAWN_TIME = 60 * 1000;
 const XP_REWARD = 50;
 const EXPEDITION_DURATION = 60 * 60 * 1000;
+const recentMessageIds = new Map<string, number>();
 
 function randomInteger(minimum: number, maximum: number): number {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
@@ -499,6 +500,25 @@ client.on("message", async (channel, tags, message, self) => {
     if (self) {
         return;
     }
+
+const messageId = tags.id;
+
+if (messageId) {
+  const now = Date.now();
+
+  if (recentMessageIds.has(messageId)) {
+    console.log("[DUPLICATE MESSAGE IGNORED]", messageId);
+    return;
+  }
+
+  recentMessageIds.set(messageId, now);
+
+  for (const [id, timestamp] of recentMessageIds) {
+    if (now - timestamp > 60_000) {
+      recentMessageIds.delete(id);
+    }
+  }
+}
 
     const command = message.trim().toLowerCase();    const currentChannel = normalizeChannel(channel);
 
