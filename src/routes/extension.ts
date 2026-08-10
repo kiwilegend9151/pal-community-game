@@ -280,13 +280,364 @@ router.get(
                 palSpheres: player.palSpheres,
                 megaSpheres: player.megaSpheres,
                 gigaSpheres: player.gigaSpheres,
-                hyperSpheres: player.hyperSpheres
+                hyperSpheres: player.hyperSpheres,
+		paldium: player.paldium,
+		wood: player.wood,
+		stone: player.stone,
             });
         } catch (error) {
             console.error("Could not load extension profile:", error);
 
             return res.status(500).json({
                 error: "Could not load player profile"
+            });
+        }
+    }
+);
+
+router.post(
+    "/shop/buy",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const body = req.body as {
+                sphereType?: "pal" | "mega" | "giga" | "hyper";
+                quantity?: number;
+            };
+
+            const sphereType = body.sphereType;
+            const quantity = body.quantity ?? 1;
+
+            const prices = {
+                pal: 10,
+                mega: 20,
+                giga: 30,
+                hyper: 50
+            } as const;
+
+            const sphereFields = {
+                pal: "palSpheres",
+                mega: "megaSpheres",
+                giga: "gigaSpheres",
+                hyper: "hyperSpheres"
+            } as const;
+
+            if (!sphereType || !(sphereType in prices)) {
+                return res.status(400).json({
+                    error: "Invalid sphere type"
+                });
+            }
+
+            if (
+                !Number.isInteger(quantity) ||
+                quantity < 1 ||
+                quantity > 100
+            ) {
+                return res.status(400).json({
+                    error: "Quantity must be between 1 and 100"
+                });
+            }
+
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId
+                }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            const totalPrice = prices[sphereType] * quantity;
+            const sphereField = sphereFields[sphereType];
+
+            const purchaseResult = await prisma.player.updateMany({
+                where: {
+                    id: player.id,
+                    coins: {
+                        gte: totalPrice
+                    }
+                },
+                data: {
+                    coins: {
+                        decrement: totalPrice
+                    },
+                    [sphereField]: {
+                        increment: quantity
+                    }
+                }
+            });
+
+            if (purchaseResult.count !== 1) {
+                return res.status(400).json({
+                    error: `You need ${totalPrice} coins`
+                });
+            }
+
+            const updatedPlayer = await prisma.player.findUnique({
+                where: {
+                    id: player.id
+                }
+            });
+
+            return res.json({
+                message: "Purchase successful",
+                coins: updatedPlayer?.coins ?? 0,
+                palSpheres: updatedPlayer?.palSpheres ?? 0,
+                megaSpheres: updatedPlayer?.megaSpheres ?? 0,
+                gigaSpheres: updatedPlayer?.gigaSpheres ?? 0,
+                hyperSpheres: updatedPlayer?.hyperSpheres ?? 0
+            });
+        } catch (error) {
+            console.error("Extension shop purchase failed:", error);
+
+            return res.status(500).json({
+                error: "Purchase could not be completed"
+            });
+        }
+    }
+);
+
+router.get(
+    "/expedition",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                include: {
+                    expedition: {
+                        include: {
+                            monster: true
+                        }
+                    }
+                }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            if (!player.expedition) {
+                return res.json({
+                    active: false
+                });
+            }
+
+            const expedition = player.expedition;
+            const completed =
+                expedition.completesAt.getTime() <= Date.now();
+
+            return res.json({
+                active: true,
+                completed,
+                expedition: {
+                    id: expedition.id,
+                    monsterId: expedition.monster.id,
+                    species: expedition.monster.species,
+                    shiny: expedition.monster.shiny,
+                    startedAt: expedition.startedAt,
+                    completesAt: expedition.completesAt
+                }
+            });
+        } catch (error) {
+            console.error("Could not load expedition:", error);
+
+            return res.status(500).json({
+                error: "Could not load expedition"
+            });
+        }
+    }
+);
+
+router.post(
+    "/expedition/send",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+            const monsterId = String(req.body?.monsterId ?? "");
+
+            if (!monsterId) {
+                return res.status(400).json({
+                    error: "A Pal must be selected"
+                });
+            }
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                include: {
+                    expedition: true,
+                    monsters: {
+                        include: {
+                            expedition: true
+                        }
+                    }
+                }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            if (player.expedition) {
+                return res.status(400).json({
+                    error: "You already have an expedition"
+                });
+            }
+
+            const monster = player.monsters.find(
+                (pal) =>
+                    pal.id === monsterId &&
+                    pal.expedition === null
+            );
+
+            if (!monster) {
+                return res.status(400).json({
+                    error: "That Pal is not available"
+                });
+            }
+
+            const startedAt = new Date();
+            const completesAt = new Date(
+                startedAt.getTime() + 60 * 60 * 1000
+            );
+
+            await prisma.expedition.create({
+                data: {
+                    playerId: player.id,
+                    monsterId: monster.id,
+                    startedAt,
+                    completesAt,
+                    coinReward:
+                        Math.floor(Math.random() * 76) + 25,
+                    palSphereReward:
+                        Math.floor(Math.random() * 4),
+                    paldiumReward:
+                        Math.floor(Math.random() * 5) + 1,
+                    woodReward:
+                        Math.floor(Math.random() * 6),
+                    stoneReward:
+                        Math.floor(Math.random() * 6)
+                }
+            });
+
+            return res.json({
+                message: `${monster.species} started a 1-hour expedition`,
+                completesAt
+            });
+        } catch (error) {
+            console.error("Could not start expedition:", error);
+
+            return res.status(500).json({
+                error: "Could not start expedition"
+            });
+        }
+    }
+);
+
+router.post(
+    "/expedition/claim",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const result = await prisma.$transaction(async (tx) => {
+                const player = await tx.player.findUnique({
+                    where: { twitchId },
+                    include: {
+                        expedition: {
+                            include: {
+                                monster: true
+                            }
+                        }
+                    }
+                });
+
+                if (!player?.expedition) {
+                    throw new Error("No expedition to claim");
+                }
+
+                const expedition = player.expedition;
+
+                if (expedition.completesAt.getTime() > Date.now()) {
+                    throw new Error(
+                        "The expedition has not finished yet"
+                    );
+                }
+
+                const deleted = await tx.expedition.deleteMany({
+                    where: {
+                        id: expedition.id,
+                        playerId: player.id,
+                        completesAt: {
+                            lte: new Date()
+                        }
+                    }
+                });
+
+                if (deleted.count !== 1) {
+                    throw new Error(
+                        "This expedition was already claimed"
+                    );
+                }
+
+                const updatedPlayer = await tx.player.update({
+                    where: {
+                        id: player.id
+                    },
+                    data: {
+                        coins: {
+                            increment: expedition.coinReward
+                        },
+                        palSpheres: {
+                            increment: expedition.palSphereReward
+                        },
+                        paldium: {
+                            increment: expedition.paldiumReward
+                        },
+                        wood: {
+                            increment: expedition.woodReward
+                        },
+                        stone: {
+                            increment: expedition.stoneReward
+                        }
+                    }
+                });
+
+                return {
+                    species: expedition.monster.species,
+                    coinReward: expedition.coinReward,
+                    palSphereReward:
+                        expedition.palSphereReward,
+                    paldiumReward:
+                        expedition.paldiumReward,
+                    woodReward: expedition.woodReward,
+                    stoneReward: expedition.stoneReward,
+                    player: updatedPlayer
+                };
+            });
+
+            return res.json(result);
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Could not claim expedition";
+
+            return res.status(400).json({
+                error: message
             });
         }
     }

@@ -10,6 +10,8 @@ const items: Array<{ id: TabId; icon: string; label: string }> = [
   { id: "profile", icon: "▣", label: "Profile" },
   { id: "pals", icon: "🐾", label: "Pals" },
   { id: "inventory", icon: "🎒", label: "Inventory" },
+  { id: "shop", icon: "🛒", label: "Shop" },
+  { id: "expedition", icon: "🗺️", label: "Expedition" },
   { id: "paldex", icon: "▤", label: "Paldeck" }
 ];
 

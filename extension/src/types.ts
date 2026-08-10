@@ -1,4 +1,10 @@
-export type TabId = "pals" | "paldex" | "inventory" | "profile";
+export type TabId =
+  | "profile"
+  | "pals"
+  | "inventory"
+  | "shop"
+  | "expedition"
+  | "paldex";
 
 export interface Pal {
   id: string;
