@@ -256,7 +256,37 @@ async function clearActiveEncounter(channelName: string): Promise<void> {
     successfulCatchers.delete(channelName);
 }
 
-function getRandomMonster(): MonsterTemplate {return monsterTemplates[Math.floor(Math.random() * monsterTemplates.length)];}
+function getRandomMonster(): MonsterTemplate {
+  const roll = Math.random() * 100;
+
+  let rarity: SupportedRarity;
+
+  if (roll < 44.9) {
+    rarity = "Common";
+  } else if (roll < 74.9) {
+    rarity = "Rare";
+  } else if (roll < 94.9) {
+    rarity = "Epic";
+  } else if (roll < 99.9) {
+    rarity = "Legendary";
+  } else {
+    rarity = "Mythical";
+  }
+
+  const availableMonsters = monsterTemplates.filter(
+    (monster) => getSupportedRarity(monster.rarity) === rarity
+  );
+
+  if (availableMonsters.length === 0) {
+    return monsterTemplates[
+      Math.floor(Math.random() * monsterTemplates.length)
+    ];
+  }
+
+  return availableMonsters[
+    Math.floor(Math.random() * availableMonsters.length)
+  ];
+}
 
 async function awardPlayer(
     playerId: string,
