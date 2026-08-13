@@ -519,13 +519,12 @@ const client = new tmi.Client({
 });
 
 client.on("message", async (channel, tags, message, self) => {
-    console.log(
-        `[CHAT] pid=${process.pid}`,
-        channel,
-        tags.username,
-        message,
-        new Date().toISOString()
-    );
+    console.log("[CHAT]", {
+  channel,
+  id: tags.id,
+  username: tags.username,
+  message
+});
 
     if (self) {
         return;
