@@ -519,18 +519,22 @@ const client = new tmi.Client({
 });
 
 client.on("message", async (channel, tags, message, self) => {
-  console.log("[CHAT]", {
-    channel,
-    id: tags.id,
-    username: tags.username,
-    message
-  });
+console.log("[CHAT]", {
+  channel,
+  id: tags.id,
+  sourceId: (tags as Record<string, string | undefined>)["source-id"],
+  sourceRoomId: (tags as Record<string, string | undefined>)["source-room-id"],
+  username: tags.username,
+  message
+});
 
   if (self) {
     return;
   }
 
-  const messageId = tags.id;
+ const messageId =
+  (tags as Record<string, string | undefined>)["source-id"] ??
+  tags.id;
 
   if (messageId) {
     const now = Date.now();
