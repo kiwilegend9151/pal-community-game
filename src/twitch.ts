@@ -519,37 +519,45 @@ const client = new tmi.Client({
 });
 
 client.on("message", async (channel, tags, message, self) => {
-    console.log("[CHAT]", {
-  channel,
-  id: tags.id,
-  username: tags.username,
-  message
-});
+  console.log("[CHAT]", {
+    channel,
+    id: tags.id,
+    username: tags.username,
+    message
+  });
 
-    if (self) {
-        return;
-    }
-
-const messageId = tags.id;
-
-if (messageId) {
-  const now = Date.now();
-
-  if (recentMessageIds.has(messageId)) {
-    console.log("[DUPLICATE MESSAGE IGNORED]", messageId);
+  if (self) {
     return;
   }
 
-  recentMessageIds.set(messageId, now);
+  const messageId = tags.id;
 
-  for (const [id, timestamp] of recentMessageIds) {
-    if (now - timestamp > 60_000) {
-      recentMessageIds.delete(id);
+  if (messageId) {
+    const now = Date.now();
+
+    if (recentMessageIds.has(messageId)) {
+      console.log("[DUPLICATE MESSAGE IGNORED]", {
+        id: messageId,
+        channel,
+        message
+      });
+
+      return;
+    }
+
+    recentMessageIds.set(messageId, now);
+
+    for (const [id, timestamp] of recentMessageIds) {
+      if (now - timestamp > 60_000) {
+        recentMessageIds.delete(id);
+      }
     }
   }
-}
 
-    const command = message.trim().toLowerCase();    const currentChannel = normalizeChannel(channel);
+  const command = message.trim().toLowerCase();
+  const currentChannel = normalizeChannel(channel);
+
+  // your existing command code continues below
 
     const viewerTwitchId = tags["user-id"];
     const viewerName =
