@@ -28,6 +28,7 @@ model Player {
 
   monsters      Monster[]
   paldexEntries PaldexEntry[]
+  dailyQuests   DailyQuest[]
   expedition    Expedition?
 
   createdAt DateTime @default(now())
@@ -111,4 +112,31 @@ model Streamer {
   monsters Monster[]
 
   createdAt DateTime @default(now())
+}
+
+model DailyQuest {
+  id String @id @default(uuid())
+
+  playerId String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  questType String
+  title     String
+
+  target   Int
+  progress Int @default(0)
+
+  rewardType   String
+  rewardAmount Int
+
+  completed Boolean @default(false)
+  claimed   Boolean @default(false)
+
+  questDate DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([playerId])
+  @@index([questDate])
+  @@index([playerId, questDate])
 }

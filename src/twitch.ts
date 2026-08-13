@@ -22,6 +22,117 @@ function randomInteger(minimum: number, maximum: number): number {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 }
 
+type DailyQuestType =
+  | "catch_pals"
+  | "catch_rare_plus"
+  | "catch_epic_plus"
+  | "use_spheres"
+  | "complete_expedition"
+  | "craft_spheres"
+  | "claim_daily"
+  | "catch_lucky";
+
+type QuestTemplate = {
+  questType: DailyQuestType;
+  title: string;
+  target: number;
+};
+
+const DAILY_QUEST_TEMPLATES: QuestTemplate[] = [
+  {
+    questType: "catch_pals",
+    title: "Catch 3 Pals",
+    target: 3
+  },
+  {
+    questType: "catch_rare_plus",
+    title: "Catch a Rare or better Pal",
+    target: 1
+  },
+  {
+    questType: "catch_epic_plus",
+    title: "Catch an Epic or better Pal",
+    target: 1
+  },
+  {
+    questType: "use_spheres",
+    title: "Use 5 Spheres",
+    target: 5
+  },
+  {
+    questType: "complete_expedition",
+    title: "Complete 1 Expedition",
+    target: 1
+  },
+  {
+    questType: "craft_spheres",
+    title: "Craft 3 Spheres",
+    target: 3
+  },
+  {
+    questType: "claim_daily",
+    title: "Claim your Daily Reward",
+    target: 1
+  },
+  {
+    questType: "catch_lucky",
+    title: "Catch 1 Lucky Pal",
+    target: 1
+  }
+];
+
+function generateDailyQuestReward(): {
+  rewardType: "coins" | "giga" | "hyper";
+  rewardAmount: number;
+} {
+  const rewardTypes = ["coins", "giga", "hyper"] as const;
+
+  const rewardType =
+    rewardTypes[Math.floor(Math.random() * rewardTypes.length)];
+
+  if (rewardType === "coins") {
+    const coinRewards = [25, 50, 75];
+
+    return {
+      rewardType,
+      rewardAmount:
+        coinRewards[Math.floor(Math.random() * coinRewards.length)]
+    };
+  }
+
+  return {
+    rewardType,
+    rewardAmount: randomInteger(1, 5)
+  };
+}
+
+function chooseDailyQuests(): QuestTemplate[] {
+  const shuffled = [...DAILY_QUEST_TEMPLATES];
+
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+
+    [shuffled[index], shuffled[randomIndex]] = [
+      shuffled[randomIndex],
+      shuffled[index]
+    ];
+  }
+
+  return shuffled.slice(0, 3);
+}
+
+function getDailyQuestDate(): Date {
+  const now = new Date();
+
+  return new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    )
+  );
+}
+
 function formatRemainingTime(milliseconds: number): string {
     const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
     const hours = Math.floor(totalSeconds / 3600);
