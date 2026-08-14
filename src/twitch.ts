@@ -896,7 +896,7 @@ console.log("[CHAT]", {
     }
 
 if (
-  (command === "!quests" || command === "!quest") &&
+  (command === "!quests claim" || command === "!quest claim") &&
 message.trim().toLowerCase().split(/\s+/)[1] === "claim"
 ) {
   try {
