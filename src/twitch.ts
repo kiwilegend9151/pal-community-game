@@ -225,6 +225,44 @@ function formatQuestReward(
   }
 }
 
+async function updateDailyQuestProgress(
+  playerId: string,
+  questType: DailyQuestType,
+  amount = 1
+): Promise<void> {
+  await getOrCreateDailyQuests(playerId);
+
+  const questDate = getDailyQuestDate();
+
+  const quest = await prisma.dailyQuest.findFirst({
+    where: {
+      playerId,
+      questDate,
+      questType,
+      claimed: false
+    }
+  });
+
+  if (!quest || quest.completed) {
+    return;
+  }
+
+  const newProgress = Math.min(
+    quest.target,
+    quest.progress + amount
+  );
+
+  await prisma.dailyQuest.update({
+    where: {
+      id: quest.id
+    },
+    data: {
+      progress: newProgress,
+      completed: newProgress >= quest.target
+    }
+  });
+}
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.max(
     0,
@@ -857,6 +895,128 @@ console.log("[CHAT]", {
         return;
     }
 
+if (
+  (command === "!quests" || command === "!quest") &&
+message.trim().toLowerCase().split(/\s+/)[1] === "claim"
+) {
+  try {
+    const player = await prisma.player.findUnique({
+      where: {
+        twitchId: viewerTwitchId
+      }
+    });
+
+    if (!player) {
+      await client.say(
+        currentChannel,
+        `📋 ${viewerName}, you do not have a profile yet.`
+      );
+      return;
+    }
+
+    const quests = await getOrCreateDailyQuests(player.id);
+
+    const claimableQuests = quests.filter(
+      (quest) => quest.completed && !quest.claimed
+    );
+
+    if (claimableQuests.length === 0) {
+      await client.say(
+        currentChannel,
+        `📋 ${viewerName}, you have no completed quest rewards to claim.`
+      );
+      return;
+    }
+
+    let coins = 0;
+    let gigaSpheres = 0;
+    let hyperSpheres = 0;
+
+    for (const quest of claimableQuests) {
+      if (quest.rewardType === "coins") {
+        coins += quest.rewardAmount;
+      }
+
+      if (quest.rewardType === "giga") {
+        gigaSpheres += quest.rewardAmount;
+      }
+
+      if (quest.rewardType === "hyper") {
+        hyperSpheres += quest.rewardAmount;
+      }
+
+      if (quest.rewardType === "lucky") {
+        coins += 100;
+        hyperSpheres += 5;
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.player.update({
+        where: {
+          id: player.id
+        },
+        data: {
+          coins: {
+            increment: coins
+          },
+          gigaSpheres: {
+            increment: gigaSpheres
+          },
+          hyperSpheres: {
+            increment: hyperSpheres
+          }
+        }
+      }),
+
+      prisma.dailyQuest.updateMany({
+        where: {
+          id: {
+            in: claimableQuests.map((quest) => quest.id)
+          }
+        },
+        data: {
+          claimed: true
+        }
+      })
+    ]);
+
+    const rewards: string[] = [];
+
+    if (coins > 0) {
+      rewards.push(`${coins} Coins`);
+    }
+
+    if (gigaSpheres > 0) {
+      rewards.push(
+        `${gigaSpheres} Giga Sphere${gigaSpheres === 1 ? "" : "s"}`
+      );
+    }
+
+    if (hyperSpheres > 0) {
+      rewards.push(
+        `${hyperSpheres} Hyper Sphere${hyperSpheres === 1 ? "" : "s"}`
+      );
+    }
+
+    await client.say(
+      currentChannel,
+      `🎁 ${viewerName} claimed ${claimableQuests.length} daily quest ` +
+      `reward${claimableQuests.length === 1 ? "" : "s"}: ` +
+      `${rewards.join(", ")}!`
+    );
+  } catch (error) {
+    console.error("Quest claim failed:", error);
+
+    await client.say(
+      currentChannel,
+      `❌ Sorry ${viewerName}, your quest rewards could not be claimed.`
+    );
+  }
+
+  return;
+}
+
 if (command === "!quests" || command === "!quest") {
   try {
     const player = await prisma.player.findUnique({
@@ -1215,6 +1375,12 @@ if (command === "!dex" || command === "!paldex") {
                 return;
             }
 
+await updateDailyQuestProgress(
+  player.id,
+  "craft_spheres",
+  quantity
+);
+
             await client.say(
                 currentChannel,
                 `🔨 ${viewerName} crafted ${quantity} ` +
@@ -1406,6 +1572,12 @@ if (command === "!dex" || command === "!paldex") {
     
                 return;
             }
+
+await updateDailyQuestProgress(
+  player.id,
+  "claim_daily",
+  1
+);
     
             const rewardedPlayer = await prisma.player.findUnique({
                 where: {
@@ -1744,6 +1916,21 @@ if (command === "!dex" || command === "!paldex") {
                 return;
             }
 
+const expeditionPlayer =
+  await prisma.player.findUnique({
+    where: {
+      twitchId: viewerTwitchId
+    }
+  });
+
+if (expeditionPlayer) {
+  await updateDailyQuestProgress(
+    expeditionPlayer.id,
+    "complete_expedition",
+    1
+  );
+}
+
             await client.say(
                 currentChannel,
                 `🎉 ${result.monsterSpecies} returned with ` +
@@ -1848,6 +2035,12 @@ if (command === "!dex" || command === "!paldex") {
             );
             return;
         }
+
+await updateDailyQuestProgress(
+  player.id,
+  "use_spheres",
+  1
+);
 
         attemptedViewers.add(viewerTwitchId);
 
@@ -1979,6 +2172,45 @@ if (command === "!dex" || command === "!paldex") {
             coinReward,
             hyperSphereReward
         );
+
+await updateDailyQuestProgress(
+  player.id,
+  "catch_pals",
+  1
+);
+
+if (
+  rarity === "Rare" ||
+  rarity === "Epic" ||
+  rarity === "Legendary" ||
+  rarity === "Mythical"
+) {
+  await updateDailyQuestProgress(
+    player.id,
+    "catch_rare_plus",
+    1
+  );
+}
+
+if (
+  rarity === "Epic" ||
+  rarity === "Legendary" ||
+  rarity === "Mythical"
+) {
+  await updateDailyQuestProgress(
+    player.id,
+    "catch_epic_plus",
+    1
+  );
+}
+
+if (caughtMonster.shiny) {
+  await updateDailyQuestProgress(
+    player.id,
+    "catch_lucky",
+    1
+  );
+}
 
         const catchers = successfulCatchers.get(currentChannel) ?? [];
         catchers.push(viewerName);
