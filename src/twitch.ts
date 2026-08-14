@@ -133,21 +133,117 @@ function getDailyQuestDate(): Date {
   );
 }
 
+async function getOrCreateDailyQuests(playerId: string) {
+  const questDate = getDailyQuestDate();
+
+  const existingQuests = await prisma.dailyQuest.findMany({
+    where: {
+      playerId,
+      questDate
+    },
+    orderBy: {
+      createdAt: "asc"
+    }
+  });
+
+  if (existingQuests.length > 0) {
+    return existingQuests;
+  }
+
+  const selectedQuests = chooseDailyQuests();
+
+  const questData = selectedQuests.map((quest) => {
+    if (quest.questType === "catch_lucky") {
+      return {
+        playerId,
+        questType: quest.questType,
+        title: quest.title,
+        target: quest.target,
+        progress: 0,
+        rewardType: "lucky",
+        rewardAmount: 5,
+        completed: false,
+        claimed: false,
+        questDate
+      };
+    }
+
+    const reward = generateDailyQuestReward();
+
+    return {
+      playerId,
+      questType: quest.questType,
+      title: quest.title,
+      target: quest.target,
+      progress: 0,
+      rewardType: reward.rewardType,
+      rewardAmount: reward.rewardAmount,
+      completed: false,
+      claimed: false,
+      questDate
+    };
+  });
+
+  await prisma.dailyQuest.createMany({
+    data: questData
+  });
+
+  return prisma.dailyQuest.findMany({
+    where: {
+      playerId,
+      questDate
+    },
+    orderBy: {
+      createdAt: "asc"
+    }
+  });
+}
+
+function formatQuestReward(
+  rewardType: string,
+  rewardAmount: number
+): string {
+  switch (rewardType) {
+    case "coins":
+      return `${rewardAmount} Coins`;
+
+    case "giga":
+      return `${rewardAmount} Giga Sphere${
+        rewardAmount === 1 ? "" : "s"
+      }`;
+
+    case "hyper":
+      return `${rewardAmount} Hyper Sphere${
+        rewardAmount === 1 ? "" : "s"
+      }`;
+
+    case "lucky":
+      return "100 Coins + 5 Hyper Spheres";
+
+    default:
+      return "Unknown Reward";
+  }
+}
+
 function formatRemainingTime(milliseconds: number): string {
-    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+  const totalSeconds = Math.max(
+    0,
+    Math.ceil(milliseconds / 1000)
+  );
 
-    if (hours > 0) {
-        return `${hours}h ${minutes}m`;
-    }
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
 
-    if (minutes > 0) {
-        return `${minutes}m ${seconds}s`;
-    }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
 
-    return `${seconds}s`;
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+
+  return `${seconds}s`;
 }
 
 type SupportedRarity =
@@ -760,6 +856,63 @@ console.log("[CHAT]", {
 
         return;
     }
+
+if (command === "!quests" || command === "!quest") {
+  try {
+    const player = await prisma.player.findUnique({
+      where: {
+        twitchId: viewerTwitchId
+      }
+    });
+
+    if (!player) {
+      await client.say(
+        currentChannel,
+        `📋 ${viewerName}, you do not have a profile yet. Catch a Pal first!`
+      );
+
+      return;
+    }
+
+    const quests = await getOrCreateDailyQuests(player.id);
+
+    const questText = quests
+      .map((quest, index) => {
+        const progress = Math.min(quest.progress, quest.target);
+
+        const status =
+          quest.claimed
+            ? "✅ Claimed"
+            : quest.completed
+              ? "🎁 Ready"
+              : `${progress}/${quest.target}`;
+
+        return (
+          `${index + 1}. ${quest.title} — ${status} — ` +
+          `${formatQuestReward(
+            quest.rewardType,
+            quest.rewardAmount
+          )}`
+        );
+      })
+      .join(" | ");
+
+    await client.say(
+      currentChannel,
+      `📋 ${player.username}'s Daily Quests | ${questText} | ` +
+      `Use !quests claim to collect completed rewards.`
+    );
+  } catch (error) {
+    console.error("Quests command failed:", error);
+
+    await client.say(
+      currentChannel,
+      `❌ Sorry ${viewerName}, your daily quests could not be loaded.`
+    );
+  }
+
+  return;
+}
 
     if (command === "!collection") {
         try {
