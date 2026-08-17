@@ -736,6 +736,7 @@ export const monsterTemplates = [
 	type2: "",
         rarity: "Common"
     },
+    {
         species: "Kelpsea Ignis",
         hp: 70,
         attack: 70,
@@ -2709,7 +2710,7 @@ export const monsterTemplates = [
     {
         species: "Gildane",
         hp: 120,
-        attack: 110
+        attack: 110,
         defense: 110,
         speed: 10,
 	paldeck: "154",
@@ -2850,7 +2851,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },    
     {
-        species: "Souffline
+        species: "Souffline",
         hp: 70,
         attack: 75,
         defense: 60,
@@ -2861,7 +2862,7 @@ export const monsterTemplates = [
         rarity: "Rare"
     },
     {
-        species: "Lapiron"
+        species: "Lapiron",
         hp: 70,
         attack: 75,
         defense: 80,
@@ -2872,7 +2873,7 @@ export const monsterTemplates = [
         rarity: "Rare"
     },
     {
-        species: "Hoodle"
+        species: "Hoodle",
         hp: 70,
         attack: 85,
         defense: 80,
@@ -2883,7 +2884,7 @@ export const monsterTemplates = [
         rarity: "Rare"
     },
     {
-        species: "Slowatt"
+        species: "Slowatt",
         hp: 80,
         attack: 75,
         defense: 70,
@@ -2894,7 +2895,7 @@ export const monsterTemplates = [
         rarity: "Rare"
     },
     {
-        species: "Bakemi"
+        species: "Bakemi",
         hp: 70,
         attack: 85,
         defense: 80,
@@ -2905,7 +2906,7 @@ export const monsterTemplates = [
         rarity: "Rare"
     },
     {
-        species: "Solmora"
+        species: "Solmora",
         hp: 90,
         attack: 90,
         defense: 85,
@@ -2916,7 +2917,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Solmora Lux"
+        species: "Solmora Lux",
         hp: 90,
         attack: 95,
         defense: 85,
@@ -2927,7 +2928,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Lapure"
+        species: "Lapure",
         hp: 105,
         attack: 100,
         defense: 100,
@@ -2938,7 +2939,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Eidrolon"
+        species: "Eidrolon",
         hp: 115,
         attack: 125,
         defense: 120,
@@ -2949,7 +2950,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Eidrolon Ignis"
+        species: "Eidrolon Ignis",
         hp: 115,
         attack: 130,
         defense: 120,
@@ -2960,7 +2961,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Dynamoff"
+        species: "Dynamoff",
         hp: 75,
         attack: 85,
         defense: 80,
@@ -2971,7 +2972,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Tropicaw"
+        species: "Tropicaw",
         hp: 85,
         attack: 85,
         defense: 90,
@@ -2982,7 +2983,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Flaracle"
+        species: "Flaracle",
         hp: 110,
         attack: 125,
         defense: 105,
@@ -2993,7 +2994,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Ophydia"
+        species: "Ophydia",
         hp: 130,
         attack: 115,
         defense: 120,
@@ -3004,7 +3005,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Dupin"
+        species: "Dupin",
         hp: 100,
         attack: 110,
         defense: 100,
@@ -3015,7 +3016,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Roujay"
+        species: "Roujay",
         hp: 110,
         attack: 115,
         defense: 95,
@@ -3026,7 +3027,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Venusa"
+        species: "Venusa",
         hp: 80,
         attack: 85,
         defense: 90,
@@ -3037,7 +3038,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Mycora"
+        species: "Mycora",
         hp: 105,
         attack: 95,
         defense: 90,
@@ -3048,7 +3049,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Loomen"
+        species: "Loomen",
         hp: 90,
         attack: 100,
         defense: 95,
@@ -3059,7 +3060,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Wistella"
+        species: "Wistella",
         hp: 80,
         attack: 90,
         defense: 60,
@@ -3070,7 +3071,7 @@ export const monsterTemplates = [
         rarity: "Epic"
     },
     {
-        species: "Solenne"
+        species: "Solenne",
         hp: 110,
         attack: 115,
         defense: 115,
@@ -3081,7 +3082,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Renjishi"
+        species: "Renjishi",
         hp: 105,
         attack: 120,
         defense: 100,
@@ -3092,7 +3093,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Aegidron"
+        species: "Aegidron",
         hp: 105,
         attack: 125,
         defense: 140,
@@ -3103,7 +3104,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Grizzbolt"
+        species: "Grizzbolt",
         hp: 120,
         attack: 105,
         defense: 105,
@@ -3114,7 +3115,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Lyleen"
+        species: "Lyleen",
         hp: 120,
         attack: 120,
         defense: 110,
@@ -3125,7 +3126,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Fortune Bringer Lyleen"
+        species: "Fortune Bringer Lyleen",
         hp: 120,
         attack: 120,
         defense: 110,
@@ -3136,7 +3137,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Lyleen Noct"
+        species: "Lyleen Noct",
         hp: 115,
         attack: 120,
         defense: 115,
@@ -3147,7 +3148,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Fortune Bringer Lyleen Noct"
+        species: "Fortune Bringer Lyleen Noct",
         hp: 115,
         attack: 120,
         defense: 115,
@@ -3158,7 +3159,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Orserk"
+        species: "Orserk",
         hp: 120,
         attack: 130,
         defense: 115,
@@ -3169,7 +3170,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Faleris"
+        species: " Faleris",
         hp: 105,
         attack: 110,
         defense: 115,
@@ -3180,7 +3181,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Faleris Aqua"
+        species: " Faleris Aqua",
         hp: 110,
         attack: 110,
         defense: 115,
@@ -3191,7 +3192,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Shadowbeak"
+        species: " Shadowbeak",
         hp: 120,
         attack: 120,
         defense: 140,
@@ -3202,7 +3203,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "White Shadowbeak"
+        species: "White Shadowbeak",
         hp: 120,
         attack: 120,
         defense: 140,
@@ -3213,7 +3214,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Selyne"
+        species: " Selyne",
         hp: 130,
         attack: 115,
         defense: 110,
@@ -3224,7 +3225,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: "Bestigor"
+        species: "Bestigor",
         hp: 140,
         attack: 130,
         defense: 120,
@@ -3235,7 +3236,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Shaolong"
+        species: " Shaolong",
         hp: 140,
         attack: 135,
         defense: 120,
@@ -3246,7 +3247,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Silvance"
+        species: " Silvance",
         hp: 140,
         attack: 120,
         defense: 110,
@@ -3257,7 +3258,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Dandilord"
+        species: " Dandilord",
         hp: 125,
         attack: 135,
         defense: 110,
@@ -3268,7 +3269,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Bellanoir"
+        species: " Bellanoir",
         hp: 120,
         attack: 150,
         defense: 100,
@@ -3279,7 +3280,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Bellanoir Libero"
+        species: " Bellanoir Libero",
         hp: 120,
         attack: 150,
         defense: 100,
@@ -3290,7 +3291,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Xenolord"
+        species: " Xenolord",
         hp: 130,
         attack: 120,
         defense: 120,
@@ -3301,7 +3302,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Hartalis"
+        species: " Hartalis",
         hp: 135,
         attack: 130,
         defense: 100,
@@ -3312,7 +3313,7 @@ export const monsterTemplates = [
         rarity: "Legendary"
     },
     {
-        species: " Paladius"
+        species: " Paladius",
         hp: 130,
         attack: 120,
         defense: 145,
@@ -3320,10 +3321,10 @@ export const monsterTemplates = [
 	paldeck: "198",
 	type1: "Dark",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
-        species: " Necromus"
+        species: " Necromus",
         hp: 130,
         attack: 145,
         defense: 120,
@@ -3331,10 +3332,10 @@ export const monsterTemplates = [
 	paldeck: "199",
 	type1: "Dark",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
-        species: " Frostallion"
+        species: " Frostallion",
         hp: 140,
         attack: 140,
         defense: 120,
@@ -3342,10 +3343,10 @@ export const monsterTemplates = [
 	paldeck: "200",
 	type1: "Ice",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
-        species: "Royal Frostallion"
+        species: "Royal Frostallion",
         hp: 140,
         attack: 140,
         defense: 120,
@@ -3353,10 +3354,10 @@ export const monsterTemplates = [
 	paldeck: "200A",
 	type1: "Ice",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
-        species: " Frostallion Noct"
+        species: " Frostallion Noct",
         hp: 140,
         attack: 140,
         defense: 135,
@@ -3364,10 +3365,10 @@ export const monsterTemplates = [
 	paldeck: "200B",
 	type1: "Dark",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
-        species: " Neptilius"
+        species: " Neptilius",
         hp: 105,
         attack: 145,
         defense: 125,
@@ -3375,7 +3376,7 @@ export const monsterTemplates = [
 	paldeck: "201",
 	type1: "Water",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
         species: "Jetragon ",
@@ -3386,7 +3387,7 @@ export const monsterTemplates = [
 	paldeck: "202",
 	type1: "Dragon",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
         species: "Cyber Jetragon ",
@@ -3397,7 +3398,7 @@ export const monsterTemplates = [
 	paldeck: "202",
 	type1: "Dragon",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
     {
         species: "Panthalus ",
@@ -3408,7 +3409,7 @@ export const monsterTemplates = [
 	paldeck: "203",
 	type1: "Water",
 	type2: "",
-        rarity: "Mythic"
+        rarity: "Mythical"
     },
 
 
