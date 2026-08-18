@@ -1,4 +1,6 @@
 import type { Pal } from "../types";
+import { getPalImage } from "../utils/palImages";
+import { getTypeImage } from "../utils/typeImages";
 
 interface Props {
   pal: Pal | null;
@@ -7,6 +9,7 @@ interface Props {
 
 export function PalModal({ pal, onClose }: Props) {
   if (!pal) return null;
+const imageUrl = getPalImage(pal.species);
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -25,21 +28,48 @@ export function PalModal({ pal, onClose }: Props) {
           ×
         </button>
 
-        <div className="modal-art">
-          {pal.imageUrl ? (
-            <img src={pal.imageUrl} alt={pal.species} />
-          ) : (
-            <span>{pal.species.slice(0, 2).toUpperCase()}</span>
-          )}
-        </div>
+<div className="modal-art">
+  {imageUrl ? (
+    <img
+      src={imageUrl}
+      alt={pal.species.trim()}
+      className="modal-pal-image"
+    />
+  ) : (
+    <span>{pal.species.trim().slice(0, 2).toUpperCase()}</span>
+  )}
+</div>
 
         <h2>{pal.shiny && <span className="lucky-star">★ </span>}{pal.species}</h2>
         <p className="modal-level">Level {pal.level}</p>
 
-        <div className="type-row">
-          {pal.type1 && <span>{pal.type1}</span>}
-          {pal.type2 && <span>{pal.type2}</span>}
-        </div>
+<div className="type-row">
+  {pal.type1 && (
+    <span className="type-badge">
+      {getTypeImage(pal.type1) && (
+        <img
+          src={getTypeImage(pal.type1)}
+          alt=""
+          className="type-icon"
+        />
+      )}
+      {pal.type1}
+    </span>
+  )}
+
+  {pal.type2 && (
+    <span className="type-badge">
+      {getTypeImage(pal.type2) && (
+        <img
+          src={getTypeImage(pal.type2)}
+          alt=""
+          className="type-icon"
+        />
+      )}
+      {pal.type2}
+    </span>
+  )}
+</div>
 
         <dl className="stats-grid">
           <div><dt>HP</dt><dd>{pal.hp}</dd></div>

@@ -13,7 +13,7 @@ const despawnTimers = new Map<string, NodeJS.Timeout>();
 
 const DAILY_REWARD = 100;
 const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
-const DESPAWN_TIME = 60 * 1000;
+const DESPAWN_TIME = 90 * 1000;
 const XP_REWARD = 50;
 const EXPEDITION_DURATION = 60 * 60 * 1000;
 const recentMessageIds = new Map<string, number>();
