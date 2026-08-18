@@ -6,13 +6,36 @@ interface Props {
   onSelect: (pal: Pal) => void;
 }
 
+const palImages = import.meta.glob(
+  "../assets/pals/*.png",
+  {
+    eager: true,
+    query: "?url",
+    import: "default"
+  }
+) as Record<string, string>;
+
+function getPalImage(species: string): string | undefined {
+  const wantedName = `${species.trim()}.png`.toLowerCase();
+
+  const match = Object.entries(palImages).find(([path]) => {
+    const fileName = path.split("/").pop()?.toLowerCase();
+    return fileName === wantedName;
+  });
+
+  return match?.[1];
+}
+
 export function PalCard({ pal, selected, onSelect }: Props) {
   const initials = pal.species
+    .trim()
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const imageUrl = getPalImage(pal.species);
 
   return (
     <button
@@ -23,8 +46,11 @@ export function PalCard({ pal, selected, onSelect }: Props) {
       <span className="level-badge">{pal.level}</span>
 
       <span className="pal-art">
-        {pal.imageUrl ? (
-          <img src={pal.imageUrl} alt={pal.species} />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={pal.species.trim()}
+          />
         ) : (
           <span className="pal-fallback">{initials}</span>
         )}
@@ -32,7 +58,7 @@ export function PalCard({ pal, selected, onSelect }: Props) {
 
       <span className="pal-name">
         {pal.shiny && <span className="lucky-star">★ </span>}
-        {pal.species}
+        {pal.species.trim()}
       </span>
     </button>
   );

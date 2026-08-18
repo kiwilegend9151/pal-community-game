@@ -748,7 +748,7 @@ export const monsterTemplates = [
         rarity: "Common"
     },
     {
-        species: "Ribunny ",
+        species: "Ribbuny ",
         hp: 75,
         attack: 65,
         defense: 70,
@@ -759,7 +759,7 @@ export const monsterTemplates = [
         rarity: "Common"
     },
     {
-        species: "Ribunny Botan ",
+        species: "Ribbuny Botan ",
         hp: 80,
         attack: 65,
         defense: 70,

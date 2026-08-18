@@ -10,6 +10,7 @@ import { initialiseTwitch, requestIdentityShare } from "./lib/twitch";
 import type { Pal, PaldeckSummary, PlayerSummary, TabId } from "./types";
 import "./styles.css";
 
+
 type LoadState = "loading" | "ready" | "error" | "identity-required";
 type InstallState = "installing" | "success" | "error";
 
