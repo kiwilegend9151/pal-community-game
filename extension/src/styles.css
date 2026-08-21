@@ -316,3 +316,81 @@ button, input { font: inherit; }
   object-fit: contain;
   flex-shrink: 0;
 }
+
+/* Paldeck image grid */
+
+.paldex-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.paldex-card {
+  position: relative;
+  min-width: 0;
+  padding: 8px 6px 10px;
+  overflow: hidden;
+
+  border: 1px solid #444;
+  border-radius: 12px;
+  background: #262626;
+
+  text-align: center;
+}
+
+.paldex-number {
+  display: block;
+  margin-bottom: 3px;
+
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.paldex-art {
+  width: 100%;
+  height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paldex-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.paldex-name {
+  display: block;
+  margin-top: 5px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 12px;
+}
+
+/* Pals the viewer hasn't discovered */
+
+.paldex-card.undiscovered .paldex-art img {
+  filter: grayscale(100%) brightness(35%);
+  opacity: 0.55;
+}
+
+.paldex-card.undiscovered .paldex-name,
+.paldex-card.undiscovered .paldex-number {
+  color: #888;
+}
+
+.paldex-card.discovered .paldex-art img {
+  filter: none;
+  opacity: 1;
+}
+
+.paldex-missing {
+  font-size: 32px;
+  opacity: 0.4;
+}

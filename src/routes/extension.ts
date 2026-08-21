@@ -7,7 +7,8 @@ import jwt from "jsonwebtoken";
 import axios from "axios";
 import { prisma } from "../database";
 import { connectStreamer } from "../twitch";
-
+import { monsterTemplates } from "../monsters";
+999999999
 const router = express.Router();
 
 type ExtensionJwtPayload = {
@@ -750,31 +751,74 @@ router.get(
              * Monster table. Later, this can be replaced by the length of
              * your master Pal species list.
              */
-            const speciesRows = await prisma.monster.groupBy({
-                by: ["species"]
-            });
+            const discoveredBySpecies = new Map(
+    player.paldexEntries.map((entry) => [
+        entry.species.trim().toLowerCase(),
+        entry
+    ])
+);
 
-            const discovered = player.paldexEntries.length;
-            const totalSpecies = Math.max(
-                speciesRows.length,
-                discovered
-            );
-            const luckySpecies = player.paldexEntries.filter(
-                (entry) => entry.hasLucky
-            ).length;
+const uniqueSpecies = Array.from(
+    new Map(
+        monsterTemplates.map((template) => [
+            template.species.trim().toLowerCase(),
+            template
+        ])
+    ).values()
+);
 
-            return res.json({
-                discovered,
-                totalSpecies,
-                completionPercentage:
-                    totalSpecies === 0
-                        ? 0
-                        : Math.floor(
-                              (discovered / totalSpecies) * 100
-                          ),
-                luckySpecies,
-                entries: player.paldexEntries
-            });
+const entries = uniqueSpecies
+    .map((template) => {
+        const species = template.species.trim();
+
+        const discoveredEntry = discoveredBySpecies.get(
+            species.toLowerCase()
+        );
+
+        return {
+            id:
+                discoveredEntry?.id ??
+                `locked-${template.paldeck}`,
+            species,
+            paldeck: template.paldeck,
+            rarity: template.rarity,
+            hasLucky:
+                discoveredEntry?.hasLucky ?? false,
+            discoveredAt:
+                discoveredEntry?.discoveredAt ?? null,
+            discovered: Boolean(discoveredEntry)
+        };
+    })
+    .sort((a, b) =>
+        (a.paldeck ?? "").localeCompare(
+            b.paldeck ?? "",
+            undefined,
+            {
+                numeric: true,
+                sensitivity: "base"
+            }
+        )
+    );
+
+const discovered = player.paldexEntries.length;
+const totalSpecies = uniqueSpecies.length;
+
+const luckySpecies = player.paldexEntries.filter(
+    (entry) => entry.hasLucky
+).length;
+
+return res.json({
+    discovered,
+    totalSpecies,
+    completionPercentage:
+        totalSpecies === 0
+            ? 0
+            : Math.floor(
+                  (discovered / totalSpecies) * 100
+              ),
+    luckySpecies,
+    entries
+});
         } catch (error) {
             console.error("Could not load extension Paldeck:", error);
 

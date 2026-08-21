@@ -9,6 +9,7 @@ import {
 import { initialiseTwitch, requestIdentityShare } from "./lib/twitch";
 import type { Pal, PaldeckSummary, PlayerSummary, TabId } from "./types";
 import "./styles.css";
+import { getPalImage } from "./utils/palImages";
 
 
 type LoadState = "loading" | "ready" | "error" | "identity-required";
@@ -615,19 +616,54 @@ console.log("[APP] activeTab:", activeTab);
               <article><span>Lucky Species</span><strong>{paldex.luckySpecies}</strong></article>
             </div>
 
-            <div className="paldex-list">
-              {paldex.entries.map((entry) => (
-                <article key={entry.id}>
-                  <span>{entry.hasLucky ? "★" : "✓"}</span>
-                  <strong>{entry.species}</strong>
-                </article>
-              ))}
-            </div>
+<div className="paldex-grid">
+  {paldex.entries.map((entry) => {
+    const imageUrl = getPalImage(entry.species);
+
+    return (
+      <article
+        key={entry.id}
+        className={
+          entry.discovered
+            ? "paldex-card discovered"
+            : "paldex-card undiscovered"
+        }
+      >
+        <span className="paldex-number">
+          #{entry.paldeck ?? "???"}
+        </span>
+
+        <div className="paldex-art">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={entry.species}
+            />
+          ) : (
+            <span className="paldex-missing">?</span>
+          )}
+        </div>
+
+        <strong className="paldex-name">
+          {entry.hasLucky && (
+            <span className="lucky-star">★ </span>
+          )}
+          {entry.species}
+        </strong>
+      </article>
+    );
+  })}
+</div>
+
           </>
         )}
+
       </section>
 
-      <PalModal pal={selectedPal} onClose={() => setSelectedPal(null)} />
+      <PalModal
+        pal={selectedPal}
+        onClose={() => setSelectedPal(null)}
+      />
     </main>
   );
 }

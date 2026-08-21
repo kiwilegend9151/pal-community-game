@@ -43,11 +43,14 @@ export interface PaldeckSummary {
   totalSpecies: number;
   completionPercentage: number;
   luckySpecies: number;
+
   entries: Array<{
     id: string;
     species: string;
     paldeck: string | null;
+    rarity: string;
     hasLucky: boolean;
-    discoveredAt: string;
+    discoveredAt: string | null;
+    discovered: boolean;
   }>;
 }
