@@ -3287,7 +3287,7 @@ export const monsterTemplates = [
         speed: 10,
 	paldeck: "195",
 	type1: "Dark",
-	type2: "",
+	type2: "Ice",
         rarity: "Legendary"
     },
     {
