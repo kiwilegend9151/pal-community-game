@@ -2348,7 +2348,7 @@ try {
         await client.say(
             normalizedChannel,
             `🐾 A wild${luckyText} ${monster.species.trim()} appeared! ` +
-            `Use !catch, !catch mega, !catch giga, or !catch hyper within 60 seconds!`
+            `Use !catch, !catch mega, !catch giga, or !catch hyper within 90 seconds!`
         );
     }
 
