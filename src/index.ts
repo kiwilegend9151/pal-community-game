@@ -16,7 +16,7 @@ dotenv.config();
 
 const app = express();
 
-const extensionPath = path.join(process.cwd(), "extension");
+const extensionPath = path.join(process.cwd(), "extension", "dist");
 
 app.use(cors());
 app.use(express.json());
