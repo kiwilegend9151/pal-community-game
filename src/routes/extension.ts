@@ -51,11 +51,11 @@ function verifyExtensionToken(token: string): ExtensionJwtPayload {
     ) as ExtensionJwtPayload;
 }
 
-function requireExtensionPlayer(
+async function requireExtensionPlayer(
     req: ExtensionRequest,
     res: Response,
     next: NextFunction
-): void {
+): Promise<void> {
     const token = getBearerToken(req);
 
     if (!token) {
@@ -65,7 +65,7 @@ function requireExtensionPlayer(
         return;
     }
 
-    // Local browser testing at http://localhost:5173
+    // Local browser testing
     if (
         process.env.NODE_ENV !== "production" &&
         token === "local-development"
@@ -85,14 +85,37 @@ function requireExtensionPlayer(
             role: "viewer"
         };
 
-        next();
+        try {
+            await prisma.player.upsert({
+                where: {
+                    twitchId
+                },
+                update: {},
+                create: {
+                    twitchId,
+                    username: `Twitch User ${twitchId}`
+                }
+            });
+
+            next();
+        } catch (error) {
+            console.error(
+                "Could not create local extension player:",
+                error
+            );
+
+            res.status(500).json({
+                error: "Could not create player profile"
+            });
+        }
+
         return;
     }
 
     try {
         const payload = verifyExtensionToken(token);
 
-        // Twitch only includes user_id after the viewer shares identity.
+        // Twitch only includes user_id after identity sharing.
         if (!payload.user_id) {
             res.status(403).json({
                 error: "Twitch identity sharing is required"
@@ -100,15 +123,32 @@ function requireExtensionPlayer(
             return;
         }
 
+        const twitchId = payload.user_id;
+
         req.extensionUser = {
-            twitchId: payload.user_id,
+            twitchId,
             channelId: payload.channel_id,
             role: payload.role
         };
 
+        // Create a fresh profile automatically if this is a new player.
+        await prisma.player.upsert({
+            where: {
+                twitchId
+            },
+            update: {},
+            create: {
+                twitchId,
+                username: `Twitch User ${twitchId}`
+            }
+        });
+
         next();
     } catch (error) {
-        console.error("Extension token verification failed:", error);
+        console.error(
+            "Extension authentication/player creation failed:",
+            error
+        );
 
         res.status(401).json({
             error:
