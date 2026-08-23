@@ -35,15 +35,17 @@ const [expeditionMessage, setExpeditionMessage] = useState("");
 const [expeditionBusy, setExpeditionBusy] = useState(false);
 const [expeditionNow, setExpeditionNow] = useState(Date.now());
 
-  const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 
 const isConfigPage =
+  params.get("mode") === "config" ||
   params.get("configure") === "true" ||
   params.get("anchor") === "config";
 
 console.log("[APP] URL:", window.location.href);
 console.log("[APP] anchor:", params.get("anchor"));
 console.log("[APP] configure:", params.get("configure"));
+console.log("[APP] mode:", params.get("mode"));
 console.log("[APP] isConfigPage:", isConfigPage);
   const loadData = useCallback(async () => {
     setState("loading");
