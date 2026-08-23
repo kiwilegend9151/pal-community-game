@@ -42,25 +42,25 @@ export function initialiseTwitch(
     throw new Error("Twitch Extension helper could not be loaded");
   }
 
-console.log("[TWITCH] registering onContext");
+  console.log("[TWITCH] registering onContext");
 
-const contextHelper = helper as typeof helper & {
-  onContext(
-    callback: (
-      context: { mode?: string },
-      changedProperties: string[]
-    ) => void
-  ): void;
-};
+  const contextHelper = helper as typeof helper & {
+    onContext(
+      callback: (
+        isVisible: boolean,
+        context: { mode?: string }
+      ) => void
+    ): void;
+  };
 
-contextHelper.onContext((context, changedProperties) => {
-  console.log("[TWITCH] CONTEXT", {
-    mode: context?.mode,
-    changedProperties
+  contextHelper.onContext((isVisible, context) => {
+    console.log("[TWITCH] CONTEXT", {
+      isVisible,
+      mode: context?.mode
+    });
+
+    onMode(context?.mode as TwitchExtensionMode);
   });
-
-  onMode(context?.mode as TwitchExtensionMode);
-});
 
   console.log("[TWITCH] registering onAuthorized");
 
