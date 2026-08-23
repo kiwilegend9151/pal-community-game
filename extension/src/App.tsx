@@ -6,7 +6,12 @@ import {
   extensionApi,
   type ExpeditionStatusResponse
 } from "./lib/api";
-import { initialiseTwitch, requestIdentityShare } from "./lib/twitch";
+import {
+  initialiseTwitch,
+  requestIdentityShare,
+  type TwitchExtensionMode
+} from "./lib/twitch";
+
 import type { Pal, PaldeckSummary, PlayerSummary, TabId } from "./types";
 import "./styles.css";
 import { getPalImage } from "./utils/palImages";
@@ -37,15 +42,16 @@ const [expeditionNow, setExpeditionNow] = useState(Date.now());
 
 const params = new URLSearchParams(window.location.search);
 
-const isConfigPage =
-  params.get("mode") === "config" ||
-  params.get("configure") === "true" ||
-  params.get("anchor") === "config";
+const [twitchMode, setTwitchMode] =
+  useState<TwitchExtensionMode>(undefined);
+
+const isConfigPage = twitchMode === "config";
 
 console.log("[APP] URL:", window.location.href);
 console.log("[APP] anchor:", params.get("anchor"));
 console.log("[APP] configure:", params.get("configure"));
 console.log("[APP] mode:", params.get("mode"));
+console.log("[APP] Twitch mode:", twitchMode);
 console.log("[APP] isConfigPage:", isConfigPage);
   const loadData = useCallback(async () => {
     setState("loading");
@@ -165,18 +171,16 @@ const claimExpedition = useCallback(async () => {
 useEffect(() => {
   console.log("[APP] starting Twitch initialisation");
 
-  initialiseTwitch(() => {
+  initialiseTwitch(
+  () => {
     console.log("[APP] Twitch authorised");
+  },
+  (mode) => {
+    console.log("[APP] Twitch context mode:", mode);
 
-    if (isConfigPage) {
-      console.log("[APP] configuration page");
-      void installExtension();
-      return;
-    }
-
-    console.log("[APP] calling loadData");
-    void loadData();
-  });
+    setTwitchMode(mode);
+  }
+);
 }, [installExtension, isConfigPage, loadData]);
 
   const filteredPals = useMemo(() => {
@@ -187,6 +191,19 @@ useEffect(() => {
       return matchesSearch && (!luckyOnly || pal.shiny);
     });
   }, [luckyOnly, pals, query]);
+
+useEffect(() => {
+  if (twitchMode === "config") {
+    console.log("[APP] configuration page");
+    void installExtension();
+    return;
+  }
+
+  if (twitchMode === "viewer" || twitchMode === "dashboard") {
+    console.log("[APP] calling loadData");
+    void loadData();
+  }
+}, [twitchMode, installExtension, loadData]);
 
 const expeditionRemaining =
   expedition.active

@@ -1,11 +1,18 @@
 let extensionToken = "";
 
+export type TwitchExtensionMode =
+  | "config"
+  | "dashboard"
+  | "viewer"
+  | undefined;
+
 export function getExtensionToken(): string {
   return extensionToken;
 }
 
 export function initialiseTwitch(
-  onAuthorised: (auth: TwitchAuthorization) => void
+  onAuthorised: (auth: TwitchAuthorization) => void,
+  onMode: (mode: TwitchExtensionMode) => void
 ): void {
   const isLocalDevelopment =
     window.location.hostname === "localhost" ||
@@ -13,6 +20,8 @@ export function initialiseTwitch(
 
   if (isLocalDevelopment) {
     extensionToken = "local-development";
+
+    onMode("viewer");
 
     onAuthorised({
       channelId: "local",
@@ -32,6 +41,26 @@ export function initialiseTwitch(
     console.error("[TWITCH] Extension helper is missing");
     throw new Error("Twitch Extension helper could not be loaded");
   }
+
+console.log("[TWITCH] registering onContext");
+
+const contextHelper = helper as typeof helper & {
+  onContext(
+    callback: (
+      context: { mode?: string },
+      changedProperties: string[]
+    ) => void
+  ): void;
+};
+
+contextHelper.onContext((context, changedProperties) => {
+  console.log("[TWITCH] CONTEXT", {
+    mode: context?.mode,
+    changedProperties
+  });
+
+  onMode(context?.mode as TwitchExtensionMode);
+});
 
   console.log("[TWITCH] registering onAuthorized");
 
