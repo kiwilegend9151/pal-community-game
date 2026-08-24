@@ -26,6 +26,11 @@ app.use(
     express.static(extensionPath)
 );
 
+app.use(
+    "/extension-assets-v2",
+    express.static(extensionPath)
+);
+
 app.use("/game", gameRoutes);
 app.use("/players", playerRoutes);
 app.use("/monsters", monsterRoutes);
