@@ -10,6 +10,13 @@ export function getExtensionToken(): string {
   return extensionToken;
 }
 
+export interface TwitchAuthorization {
+  channelId: string;
+  clientId: string;
+  token: string;
+  userId: string;
+}
+
 export function initialiseTwitch(
   onAuthorised: (auth: TwitchAuthorization) => void,
   onMode: (mode: TwitchExtensionMode) => void
@@ -47,16 +54,20 @@ export function initialiseTwitch(
   const contextHelper = helper as typeof helper & {
     onContext(
       callback: (
-        isVisible: boolean,
-        context: { mode?: string }
+        context: {
+          mode?: string;
+          [key: string]: unknown;
+        },
+        changedProperties: string[]
       ) => void
     ): void;
   };
 
-  contextHelper.onContext((isVisible, context) => {
+  contextHelper.onContext((context, changedProperties) => {
     console.log("[TWITCH] CONTEXT", {
-      isVisible,
-      mode: context?.mode
+      mode: context?.mode,
+      changedProperties,
+      context
     });
 
     onMode(context?.mode as TwitchExtensionMode);
@@ -75,7 +86,12 @@ export function initialiseTwitch(
 
     console.log("[TWITCH] calling App callback");
 
-    onAuthorised(auth);
+    onAuthorised({
+      channelId: auth.channelId,
+      clientId: auth.clientId,
+      token: auth.token,
+      userId: auth.userId
+    });
   });
 }
 

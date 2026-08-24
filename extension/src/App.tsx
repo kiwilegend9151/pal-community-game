@@ -47,7 +47,7 @@ const [twitchMode, setTwitchMode] =
 
 const isConfigPage =
   window.location.pathname.endsWith("/config.html") ||
-  twitchMode === "config";
+  twitchMode === "config" ||
   params.get("mode") === "config" ||
   params.get("configure") === "true";
 console.log("[APP] URL:", window.location.href);
