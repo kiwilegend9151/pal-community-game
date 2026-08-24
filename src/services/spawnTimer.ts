@@ -4,7 +4,7 @@ import {
     spawnMonsterForStreamer
 } from "../twitch";
 
-const SPAWN_INTERVAL = 20 * 60 * 1000;
+const SPAWN_INTERVAL = 60 * 1000;
 
 let timerStarted = false;
 
@@ -64,7 +64,13 @@ export async function startSpawnTimer() {
         console.error("Failed to reconnect saved streamers:", error);
     }
 
+    // Run once immediately
+    console.log("Running initial spawn cycle...");
+    await runSpawnCycle();
+
+    // Then continue every 20 minutes
     setInterval(() => {
+        console.log("Running scheduled spawn cycle...");
         void runSpawnCycle();
     }, SPAWN_INTERVAL);
 }
