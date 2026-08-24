@@ -53,8 +53,10 @@ const [twitchMode, setTwitchMode] =
       : undefined
   );
 
-const isConfigPage = twitchMode === "config";
-
+const isConfigPage =
+  twitchMode === "config" ||
+  params.get("mode") === "config" ||
+  params.get("configure") === "true";
 console.log("[APP] URL:", window.location.href);
 console.log("[APP] anchor:", params.get("anchor"));
 console.log("[APP] configure:", params.get("configure"));
@@ -185,6 +187,7 @@ useEffect(() => {
     },
     (mode) => {
       console.log("[APP] Twitch context mode:", mode);
+
       setTwitchMode(mode);
     }
   );
@@ -200,7 +203,7 @@ useEffect(() => {
   }, [luckyOnly, pals, query]);
 
 useEffect(() => {
-  if (twitchMode === "config") {
+  if (isConfigPage) {
     console.log("[APP] configuration page");
     void installExtension();
     return;
@@ -210,7 +213,7 @@ useEffect(() => {
     console.log("[APP] calling loadData");
     void loadData();
   }
-}, [twitchMode, installExtension, loadData]);
+}, [isConfigPage, twitchMode, installExtension, loadData]);
 
 const expeditionRemaining =
   expedition.active
