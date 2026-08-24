@@ -42,19 +42,12 @@ const [expeditionNow, setExpeditionNow] = useState(Date.now());
 
 const params = new URLSearchParams(window.location.search);
 
-const urlMode = params.get("mode");
-
 const [twitchMode, setTwitchMode] =
-  useState<TwitchExtensionMode>(
-    urlMode === "config" ||
-    urlMode === "dashboard" ||
-    urlMode === "viewer"
-      ? urlMode
-      : undefined
-  );
+  useState<TwitchExtensionMode>(undefined);
 
 const isConfigPage =
-  twitchMode === "config" ||
+  window.location.pathname.endsWith("/config.html") ||
+  twitchMode === "config";
   params.get("mode") === "config" ||
   params.get("configure") === "true";
 console.log("[APP] URL:", window.location.href);

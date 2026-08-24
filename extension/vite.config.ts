@@ -9,7 +9,13 @@ export default defineConfig({
   publicDir: "public",
 
   build: {
-    assetsDir: ""
+    assetsDir: "",
+    rollupOptions: {
+      input: {
+        index: "index.html",
+        config: "config.html"
+      }
+    }
   },
 
   server: {
