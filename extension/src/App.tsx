@@ -42,8 +42,16 @@ const [expeditionNow, setExpeditionNow] = useState(Date.now());
 
 const params = new URLSearchParams(window.location.search);
 
+const urlMode = params.get("mode");
+
 const [twitchMode, setTwitchMode] =
-  useState<TwitchExtensionMode>(undefined);
+  useState<TwitchExtensionMode>(
+    urlMode === "config" ||
+    urlMode === "dashboard" ||
+    urlMode === "viewer"
+      ? urlMode
+      : undefined
+  );
 
 const isConfigPage = twitchMode === "config";
 
@@ -172,16 +180,15 @@ useEffect(() => {
   console.log("[APP] starting Twitch initialisation");
 
   initialiseTwitch(
-  () => {
-    console.log("[APP] Twitch authorised");
-  },
-  (mode) => {
-    console.log("[APP] Twitch context mode:", mode);
-
-    setTwitchMode(mode);
-  }
-);
-}, [installExtension, isConfigPage, loadData]);
+    () => {
+      console.log("[APP] Twitch authorised");
+    },
+    (mode) => {
+      console.log("[APP] Twitch context mode:", mode);
+      setTwitchMode(mode);
+    }
+  );
+}, []);
 
   const filteredPals = useMemo(() => {
     const value = query.trim().toLowerCase();
