@@ -4,7 +4,7 @@ import {
     spawnMonsterForStreamer
 } from "../twitch";
 
-const SPAWN_INTERVAL = 60 * 1000;
+const SPAWN_INTERVAL = 20 * 60 * 1000;
 
 let timerStarted = false;
 
