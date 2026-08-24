@@ -777,9 +777,9 @@ console.log("[CHAT]", {
     return;
   }
 
- const messageId =
-  (tags as Record<string, string | undefined>)["source-id"] ??
-  tags.id;
+const messageId =
+  tags.id ??
+  (tags as Record<string, string | undefined>)["source-id"];
 
   if (messageId) {
     const now = Date.now();
