@@ -45,6 +45,8 @@ const params = new URLSearchParams(window.location.search);
 const [twitchMode, setTwitchMode] =
   useState<TwitchExtensionMode>(undefined);
 
+const [twitchAuthorised, setTwitchAuthorised] = useState(false);
+
 const isConfigPage =
   window.location.pathname.endsWith("/config.html") ||
   twitchMode === "config" ||
@@ -174,16 +176,17 @@ const claimExpedition = useCallback(async () => {
 useEffect(() => {
   console.log("[APP] starting Twitch initialisation");
 
-  initialiseTwitch(
-    () => {
-      console.log("[APP] Twitch authorised");
-    },
-    (mode) => {
-      console.log("[APP] Twitch context mode:", mode);
+initialiseTwitch(
+  () => {
+    console.log("[APP] Twitch authorised");
+    setTwitchAuthorised(true);
+  },
+  (mode) => {
+    console.log("[APP] Twitch context mode:", mode);
 
-      setTwitchMode(mode);
-    }
-  );
+    setTwitchMode(mode);
+  }
+);
 }, []);
 
   const filteredPals = useMemo(() => {
@@ -198,6 +201,13 @@ useEffect(() => {
 useEffect(() => {
   if (isConfigPage) {
     console.log("[APP] configuration page");
+
+    if (!twitchAuthorised) {
+      console.log("[APP] waiting for Twitch authorization...");
+      return;
+    }
+
+    console.log("[APP] Twitch authorized, installing extension");
     void installExtension();
     return;
   }
@@ -206,7 +216,13 @@ useEffect(() => {
     console.log("[APP] calling loadData");
     void loadData();
   }
-}, [isConfigPage, twitchMode, installExtension, loadData]);
+}, [
+  isConfigPage,
+  twitchMode,
+  twitchAuthorised,
+  installExtension,
+  loadData
+]);
 
 const expeditionRemaining =
   expedition.active
