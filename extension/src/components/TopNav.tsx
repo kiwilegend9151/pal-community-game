@@ -11,12 +11,12 @@ const items: Array<{
   image?: string;
   label: string;
 }> = [
-  { id: "profile", label: "Profile" },
+  { id: "profile", image: "./nav/profile.webp", label: "Profile" },
   { id: "pals", image: "./nav/pals.webp", label: "Pals" },
   { id: "inventory", image: "./nav/bag.webp", label: "Inventory" },
   { id: "shop", image: "./nav/shop.webp", label: "Shop" },
   { id: "expedition", image: "./nav/expedition.webp", label: "Expedition" },
-  { id: "paldex", label: "Paldeck" }
+  { id: "paldex", image: "./nav/paldeck.webp", label: "Paldeck" }
 ];
 
 export function TopNav({ activeTab, onChange, onRefresh }: Props) {
