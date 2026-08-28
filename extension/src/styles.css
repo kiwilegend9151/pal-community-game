@@ -166,12 +166,39 @@ button, input { font: inherit; }
   font-size: 25px;
 }
 
-.inventory-list { display: grid; gap: 9px; }
-.inventory-list article {
+.inventory-list {
+  display: grid;
+  gap: 9px;
+}
+
+.inventory-list article.inventory-item {
   min-height: 68px;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+}
+
+.inventory-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inventory-item-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.inventory-item-info span {
+  color: #f0f0f0;
+  font-size: 15px;
+}
+
+.inventory-item strong {
+  margin-top: 0;
+  font-size: 22px;
 }
 
 .xp-block {

@@ -475,43 +475,99 @@ console.log("[APP] activeTab:", activeTab);
     <h1>Inventory</h1>
 
     <div className="inventory-list">
-      <article>
-        <span>Coins</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/gold-coin.webp"
+            alt="Coins"
+            className="inventory-item-image"
+          />
+          <span>Coins</span>
+        </div>
         <strong>{profile.coins}</strong>
       </article>
 
-      <article>
-        <span>Pal Spheres</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/pal-sphere.webp"
+            alt="Pal Spheres"
+            className="inventory-item-image"
+          />
+          <span>Pal Spheres</span>
+        </div>
         <strong>{profile.palSpheres}</strong>
       </article>
 
-      <article>
-        <span>Mega Spheres</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/mega-sphere.webp"
+            alt="Mega Spheres"
+            className="inventory-item-image"
+          />
+          <span>Mega Spheres</span>
+        </div>
         <strong>{profile.megaSpheres}</strong>
       </article>
 
-      <article>
-        <span>Giga Spheres</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/giga-sphere.webp"
+            alt="Giga Spheres"
+            className="inventory-item-image"
+          />
+          <span>Giga Spheres</span>
+        </div>
         <strong>{profile.gigaSpheres}</strong>
       </article>
 
-      <article>
-        <span>Hyper Spheres</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/hyper-sphere.webp"
+            alt="Hyper Spheres"
+            className="inventory-item-image"
+          />
+          <span>Hyper Spheres</span>
+        </div>
         <strong>{profile.hyperSpheres}</strong>
       </article>
 
-      <article>
-        <span>💎 Paldium</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/paldium-fragment.webp"
+            alt="Paldium"
+            className="inventory-item-image"
+          />
+          <span>Paldium</span>
+        </div>
         <strong>{profile.paldium}</strong>
       </article>
 
-      <article>
-        <span>🪵 Wood</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/wood.webp"
+            alt="Wood"
+            className="inventory-item-image"
+          />
+          <span>Wood</span>
+        </div>
         <strong>{profile.wood}</strong>
       </article>
 
-      <article>
-        <span>🪨 Stone</span>
+      <article className="inventory-item">
+        <div className="inventory-item-info">
+          <img
+            src="/inventory/stone.webp"
+            alt="Stone"
+            className="inventory-item-image"
+          />
+          <span>Stone</span>
+        </div>
         <strong>{profile.stone}</strong>
       </article>
     </div>
