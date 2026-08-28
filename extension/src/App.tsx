@@ -478,7 +478,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/gold-coin.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/gold-coin.webp"
             alt="Coins"
             className="inventory-item-image"
           />
@@ -490,7 +490,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/pal-sphere.webp"
+           src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
             alt="Pal Spheres"
             className="inventory-item-image"
           />
@@ -502,7 +502,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/mega-sphere.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
             alt="Mega Spheres"
             className="inventory-item-image"
           />
@@ -514,7 +514,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/giga-sphere.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
             alt="Giga Spheres"
             className="inventory-item-image"
           />
@@ -526,7 +526,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/hyper-sphere.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
             alt="Hyper Spheres"
             className="inventory-item-image"
           />
@@ -538,7 +538,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/paldium-fragment.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/paldium-fragment.webp"
             alt="Paldium"
             className="inventory-item-image"
           />
@@ -550,7 +550,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/wood.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/wood.webp"
             alt="Wood"
             className="inventory-item-image"
           />
@@ -562,7 +562,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="./inventory/stone.webp"
+            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/stone.webp"
             alt="Stone"
             className="inventory-item-image"
           />
