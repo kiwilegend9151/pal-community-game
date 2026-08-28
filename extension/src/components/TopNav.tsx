@@ -13,7 +13,7 @@ const items: Array<{
 }> = [
   { id: "profile", label: "Profile" },
   { id: "pals", image: "./nav/pals.webp", label: "Pals" },
-  { id: "inventory", image: "./nav/inventory.webp", label: "Inventory" },
+  { id: "inventory", image: "./nav/bag.webp", label: "Inventory" },
   { id: "shop", image: "./nav/shop.webp", label: "Shop" },
   { id: "expedition", image: "./nav/expedition.webp", label: "Expedition" },
   { id: "paldex", label: "Paldeck" }
