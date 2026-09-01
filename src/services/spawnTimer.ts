@@ -4,9 +4,10 @@ import {
     spawnMonsterForStreamer
 } from "../twitch";
 
-const SPAWN_INTERVAL = 20 * 60 * 1000;
+const SPAWN_INTERVAL_MINUTES = 20;
 
-let timerStarted = false;
+// Keeps track of the scheduled slot we have already processed
+let lastProcessedSlot: string | null = null;
 
 async function connectSavedStreamers() {
     const streamers = await prisma.streamer.findMany({
@@ -27,11 +28,57 @@ async function connectSavedStreamers() {
     return streamers;
 }
 
-async function runSpawnCycle() {
+function getCurrentSlot(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hour = String(date.getHours()).padStart(2, "0");
+
+    const minute =
+        Math.floor(date.getMinutes() / SPAWN_INTERVAL_MINUTES) *
+        SPAWN_INTERVAL_MINUTES;
+
+    return `${year}-${month}-${day} ${hour}:${String(minute).padStart(2, "0")}`;
+}
+
+function getNextSpawnTime(date = new Date()) {
+    const next = new Date(date);
+
+    next.setSeconds(0);
+    next.setMilliseconds(0);
+
+    const minutesPastHour = next.getMinutes();
+    const nextMinute =
+        Math.ceil((minutesPastHour + 1) / SPAWN_INTERVAL_MINUTES) *
+        SPAWN_INTERVAL_MINUTES;
+
+    if (nextMinute >= 60) {
+        next.setHours(next.getHours() + 1);
+        next.setMinutes(0);
+    } else {
+        next.setMinutes(nextMinute);
+    }
+
+    return next;
+}
+
+async function runSpawnCycle(slot: string) {
+    if (lastProcessedSlot === slot) {
+        return;
+    }
+
+    lastProcessedSlot = slot;
+
+    console.log(`Running scheduled spawn cycle for ${slot}...`);
+
     try {
         const streamers = await prisma.streamer.findMany({
             where: { live: true }
         });
+
+        console.log(
+            `Found ${streamers.length} live streamer(s) for scheduled spawn`
+        );
 
         for (const streamer of streamers) {
             try {
@@ -49,13 +96,7 @@ async function runSpawnCycle() {
 }
 
 export async function startSpawnTimer() {
-    if (timerStarted) {
-        console.log("Streamer spawn timer already started");
-        return;
-    }
-
-    timerStarted = true;
-    console.log("Streamer spawn timer started");
+    console.log("Starting clock-aligned streamer spawn scheduler...");
 
     try {
         const streamers = await connectSavedStreamers();
@@ -64,13 +105,33 @@ export async function startSpawnTimer() {
         console.error("Failed to reconnect saved streamers:", error);
     }
 
-    // Run once immediately
-    console.log("Running initial spawn cycle...");
-    await runSpawnCycle();
+    const checkSchedule = async () => {
+        const now = new Date();
 
-    // Then continue every 20 minutes
-    setInterval(() => {
-        console.log("Running scheduled spawn cycle...");
-        void runSpawnCycle();
-    }, SPAWN_INTERVAL);
+        const currentMinute = now.getMinutes();
+        const currentSecond = now.getSeconds();
+
+        const isSpawnMinute =
+            currentMinute % SPAWN_INTERVAL_MINUTES === 0;
+
+        // Only process the scheduled slot during its first few seconds.
+        if (isSpawnMinute && currentSecond < 15) {
+            const slot = getCurrentSlot(now);
+
+            await runSpawnCycle(slot);
+        }
+
+        const nextSpawn = getNextSpawnTime(now);
+
+        console.log(
+            `Next scheduled spawn check: ${nextSpawn.toLocaleTimeString()}`
+        );
+
+        // Check again in 10 seconds.
+        setTimeout(() => {
+            void checkSchedule();
+        }, 10_000);
+    };
+
+    void checkSchedule();
 }
