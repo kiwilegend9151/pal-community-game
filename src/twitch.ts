@@ -824,7 +824,7 @@ const messageId =
             "📖 Pal Community Game Commands | " +
             "!catch | !catch mega | !catch giga | !catch hyper | " +
             "!collection | !profile | !paldex | !daily | " +
-            "!shop | !buy | !inventory | !expedition | " +
+            "!shop | !buy | !inventory | !expedition | !dc | " +
 	    "Use !help 2 or !help 3 for more."
         );
         return;
@@ -853,6 +853,14 @@ const messageId =
         );
         return;
     }
+
+if (command === "!dc") {
+    await client.say(
+        currentChannel,
+        "💬 Join the pal community game Discord: https://discord.gg/KX2caqbdPf"
+    );
+    return;
+}
 
     if (command === "!profile") {
         try {
@@ -1074,74 +1082,52 @@ if (command === "!quests" || command === "!quest") {
   return;
 }
 
-    if (command === "!collection") {
-        try {
-            const player = await prisma.player.findUnique({
-                where: {
-                    twitchId: viewerTwitchId
-                },
-                include: {
-                    monsters: {
-                        orderBy: {
-                            species: "asc"
-                        }
-                    }
-                }
-            });
-
-            if (!player || player.monsters.length === 0) {
-                await client.say(
-                    currentChannel,
-                    `📭 ${viewerName}, your collection is empty. Go catch some pals!`
-                );
-                return;
-            }
-
-            const groupedMonsters = new Map<
-                string,
-                { count: number; hasShiny: boolean }
-            >();
-
-            for (const monster of player.monsters) {
-                const existing = groupedMonsters.get(monster.species);
-
-                if (existing) {
-                    existing.count++;
-                    existing.hasShiny =
-                        existing.hasShiny || monster.shiny;
-                } else {
-                    groupedMonsters.set(monster.species, {
-                        count: 1,
-                        hasShiny: monster.shiny
-                    });
+if (command === "!collection") {
+    try {
+        const player = await prisma.player.findUnique({
+            where: {
+                twitchId: viewerTwitchId
+            },
+            include: {
+                monsters: {
+                    orderBy: {
+                        createdAt: "desc"
+                    },
+                    take: 5
                 }
             }
+        });
 
-            const collectionText = Array.from(
-                groupedMonsters.entries()
-            )
-                .map(([species, details]) => {
-                    const luckyIcon = details.hasShiny ? "✨ " : "";
-                    return `${luckyIcon}${species} ×${details.count}`;
-                })
-                .join(", ");
-
+        if (!player || player.monsters.length === 0) {
             await client.say(
                 currentChannel,
-                `🎒 ${player.username}'s Collection ` +
-                `(${player.monsters.length}): ${collectionText}`
+                `📭 ${viewerName}, you haven't caught any pals yet!`
             );
-        } catch (error) {
-            console.error("Collection command failed:", error);
-
-            await client.say(
-                currentChannel,
-                `❌ Sorry ${viewerName}, your collection could not be loaded.`
-            );
+            return;
         }
 
-        return;
+        const latestCatches = player.monsters
+            .map((monster, index) => {
+                const luckyIcon = monster.shiny ? "✨ " : "";
+                return `${index + 1}. ${luckyIcon}${monster.species}`;
+            })
+            .join(" | ");
+
+        await client.say(
+            currentChannel,
+            `📦 ${player.username}'s latest catches: ${latestCatches}`
+        );
+    } catch (error) {
+        console.error("Collection command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your collection could not be loaded.`
+        );
     }
+
+    return;
+}
 
 if (command === "!dex" || command === "!paldex") {
     try {
