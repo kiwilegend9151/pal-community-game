@@ -54,11 +54,12 @@ app.use(
 const extensionPath = path.join(process.cwd(), "extension", "dist");
 
 const allowedOrigins = [
-    "https://extension-files.twitch.tv",
     "https://twitch.tv",
     "https://www.twitch.tv",
     "http://localhost:5173"
 ];
+
+const allowedOriginRegex = /^https:\/\/[a-z0-9-]+\.ext-twitch\.tv$/i;
 
 const corsOptions = {
     origin: (origin: string | undefined, callback: (error: Error | null, allowed?: boolean) => void) => {
@@ -67,10 +68,12 @@ const corsOptions = {
             return callback(null, true);
         }
 
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-
+	if (
+   	    allowedOrigins.includes(origin) ||
+    	    allowedOriginRegex.test(origin)
+	) {
+   	    return callback(null, true);
+	}
         return callback(new Error("Origin not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -120,7 +123,10 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
+        origin: [
+            ...allowedOrigins,
+            allowedOriginRegex
+        ],
         methods: ["GET", "POST"]
     }
 });
