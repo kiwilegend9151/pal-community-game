@@ -6,7 +6,6 @@ import path from "path";
 import { Server } from "socket.io";
 
 import gameRoutes from "./routes/game";
-import playerRoutes from "./routes/player";
 import extensionRoutes from "./routes/extension";
 import { startSpawnTimer } from "./services/spawnTimer";
 
@@ -40,7 +39,6 @@ app.use(
 );
 
 app.use("/game", gameRoutes);
-app.use("/players", playerRoutes);
 app.use("/extension", extensionRoutes);
 
 app.get("/", (_req, res) => {
