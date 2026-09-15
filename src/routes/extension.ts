@@ -8,7 +8,12 @@ import axios from "axios";
 import { prisma } from "../database";
 import { connectStreamer } from "../twitch";
 import { monsterTemplates } from "../monsters";
-999999999
+import {
+    shopLimiter,
+    expeditionLimiter,
+    installLimiter
+} from "../middleware/rateLimit";
+
 const router = express.Router();
 
 type ExtensionJwtPayload = {
@@ -151,10 +156,7 @@ async function requireExtensionPlayer(
         );
 
         res.status(401).json({
-            error:
-                error instanceof Error
-                    ? error.message
-                    : "Invalid extension token"
+            error: "Invalid extension token"
         });
     }
 }
@@ -162,7 +164,7 @@ async function requireExtensionPlayer(
 /*
  * Broadcaster installation route
  */
-router.post("/install", async (req, res) => {
+router.post("/install", installLimiter, async (req, res) => {
     try {
         const token = getBearerToken(req);
 
@@ -242,9 +244,9 @@ router.post("/install", async (req, res) => {
         await connectStreamer(channelName);
 
         return res.json({
-            message: "Bot connected successfully",
-            streamer
-        });
+    message: "Bot connected successfully",
+    channelName
+});
     } catch (error) {
         console.error("Extension installation failed:", error);
 
@@ -260,10 +262,10 @@ router.post("/install", async (req, res) => {
         }
 
         if (error instanceof jwt.JsonWebTokenError) {
-            return res.status(401).json({
-                error: `Extension token error: ${error.message}`
-            });
-        }
+    return res.status(401).json({
+        error: "Invalid extension token"
+    });
+}
 
         return res.status(500).json({
             error:
@@ -338,6 +340,7 @@ router.get(
 
 router.post(
     "/shop/buy",
+    shopLimiter,
     requireExtensionPlayer,
     async (req: ExtensionRequest, res) => {
         try {
@@ -501,6 +504,7 @@ router.get(
 
 router.post(
     "/expedition/send",
+    expeditionLimiter,
     requireExtensionPlayer,
     async (req: ExtensionRequest, res) => {
         try {
@@ -589,6 +593,7 @@ router.post(
 
 router.post(
     "/expedition/claim",
+    expeditionLimiter,
     requireExtensionPlayer,
     async (req: ExtensionRequest, res) => {
         try {
