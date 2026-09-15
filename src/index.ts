@@ -7,7 +7,6 @@ import { Server } from "socket.io";
 
 import gameRoutes from "./routes/game";
 import playerRoutes from "./routes/player";
-import monsterRoutes from "./routes/monster";
 import streamerRoutes from "./routes/streamer";
 import extensionRoutes from "./routes/extension";
 import { startSpawnTimer } from "./services/spawnTimer";
@@ -43,7 +42,6 @@ app.use(
 
 app.use("/game", gameRoutes);
 app.use("/players", playerRoutes);
-app.use("/monsters", monsterRoutes);
 app.use("/streamers", streamerRoutes);
 app.use("/extension", extensionRoutes);
 
