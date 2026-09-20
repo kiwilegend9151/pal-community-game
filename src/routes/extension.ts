@@ -4,6 +4,7 @@ import express, {
     type Response
 } from "express";
 import jwt from "jsonwebtoken";
+import { Prisma } from "@prisma/client";
 import axios from "axios";
 import { prisma } from "../database";
 import { connectStreamer } from "../twitch";
@@ -251,27 +252,25 @@ router.post("/install", installLimiter, async (req, res) => {
         console.error("Extension installation failed:", error);
 
         if (axios.isAxiosError(error)) {
-            console.error("Twitch API response:", error.response?.data);
+            console.error(
+                "Twitch API request failed:",
+                error.response?.status,
+                error.response?.data
+            );
 
-            return res.status(error.response?.status || 500).json({
-                error:
-                    error.response?.data?.message ||
-                    error.message ||
-                    "Twitch API request failed"
+            return res.status(502).json({
+                error: "Twitch installation request failed"
             });
         }
 
         if (error instanceof jwt.JsonWebTokenError) {
-    return res.status(401).json({
-        error: "Invalid extension token"
-    });
-}
+            return res.status(401).json({
+                error: "Invalid extension token"
+            });
+        }
 
         return res.status(500).json({
-            error:
-                error instanceof Error
-                    ? error.message
-                    : "Extension setup failed"
+            error: "Extension setup failed"
         });
     }
 });
@@ -581,8 +580,17 @@ router.post(
                 message: `${monster.species} started a 1-hour expedition`,
                 completesAt
             });
-        } catch (error) {
+               } catch (error) {
             console.error("Could not start expedition:", error);
+
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === "P2002"
+            ) {
+                return res.status(400).json({
+                    error: "You already have an expedition"
+                });
+            }
 
             return res.status(500).json({
                 error: "Could not start expedition"
