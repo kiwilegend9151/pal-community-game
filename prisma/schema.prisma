@@ -22,6 +22,8 @@ model Player {
   gigaSpheres  Int @default(0)
   hyperSpheres Int @default(0)
 
+  hasClaimedStarter Boolean @default(false)
+
   paldium Int @default(0)
   wood    Int @default(0)
   stone   Int @default(0)

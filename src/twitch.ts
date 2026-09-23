@@ -824,7 +824,7 @@ const messageId =
         await client.say(
             currentChannel,
             "📖 Pal Community Game Commands | " +
-            "!catch | !catch mega | !catch giga | !catch hyper | " +
+            " !start |!catch | !catch mega | !catch giga | !catch hyper | " +
             "!collection | !profile | !paldex | !daily | !craft | " +
             "!shop | !buy | !inventory | !expedition | !dc | !leaderboard | " +
 	    "Use !help 2 or !help 3 for more."
@@ -904,6 +904,46 @@ if (command === "!dc") {
 
         return;
     }
+
+if (command === "!start") {
+    try {
+        const result = await prisma.player.updateMany({
+            where: {
+                twitchId: viewerTwitchId,
+                hasClaimedStarter: false
+            },
+            data: {
+                palSpheres: {
+                    increment: 5
+                },
+                hasClaimedStarter: true
+            }
+        });
+
+        if (result.count === 0) {
+            await client.say(
+                currentChannel,
+                `❌ ${viewerName}, you've already claimed your 5 starter Spheres!`
+            );
+
+            return;
+        }
+
+        await client.say(
+            currentChannel,
+            `🎁 Welcome ${viewerName}! You've received 5 Pal Spheres to get started!`
+        );
+    } catch (error) {
+        console.error("Start command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your starter reward could not be claimed.`
+        );
+    }
+
+    return;
+}
 
 if (command === "!leaderboard") {
     const now = Date.now();
