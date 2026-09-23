@@ -17,6 +17,8 @@ const DESPAWN_TIME = 90 * 1000;
 const XP_REWARD = 50;
 const EXPEDITION_DURATION = 60 * 60 * 1000;
 const recentMessageIds = new Map<string, number>();
+const leaderboardCooldowns = new Map<string, number>();
+const LEADERBOARD_COOLDOWN = 30 * 1000;
 
 function randomInteger(minimum: number, maximum: number): number {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
@@ -823,8 +825,8 @@ const messageId =
             currentChannel,
             "📖 Pal Community Game Commands | " +
             "!catch | !catch mega | !catch giga | !catch hyper | " +
-            "!collection | !profile | !paldex | !daily | " +
-            "!shop | !buy | !inventory | !expedition | !dc | " +
+            "!collection | !profile | !paldex | !daily | !craft | " +
+            "!shop | !buy | !inventory | !expedition | !dc | !leaderboard | " +
 	    "Use !help 2 or !help 3 for more."
         );
         return;
@@ -902,6 +904,82 @@ if (command === "!dc") {
 
         return;
     }
+
+if (command === "!leaderboard") {
+    const now = Date.now();
+    const lastUsed = leaderboardCooldowns.get(currentChannel);
+
+    if (lastUsed && now - lastUsed < LEADERBOARD_COOLDOWN) {
+        const remainingSeconds = Math.ceil(
+            (LEADERBOARD_COOLDOWN - (now - lastUsed)) / 1000
+        );
+
+        await client.say(
+            currentChannel,
+            `⏳ The leaderboard is on cooldown. Try again in ${remainingSeconds}s.`
+        );
+
+        return;
+    }
+
+    leaderboardCooldowns.set(currentChannel, now);
+
+    try {
+        const topPlayers = await prisma.player.findMany({
+            select: {
+                username: true,
+                _count: {
+                    select: {
+                        monsters: true
+                    }
+                }
+            },
+            orderBy: [
+                {
+                    monsters: {
+                        _count: "desc"
+                    }
+                },
+                {
+                    username: "asc"
+                }
+            ],
+            take: 5
+        });
+
+        if (topPlayers.length === 0) {
+            await client.say(
+                currentChannel,
+                "🏆 The Pal leaderboard is empty! Catch a Pal to get started."
+            );
+
+            return;
+        }
+
+        const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+        const leaderboard = topPlayers
+            .map(
+                (player, index) =>
+                    `${medals[index]} ${player.username} — ${player._count.monsters} Pals`
+            )
+            .join(" | ");
+
+        await client.say(
+            currentChannel,
+            `🏆 Top 5 Pal Collectors: ${leaderboard}`
+        );
+    } catch (error) {
+        console.error("Leaderboard command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, the leaderboard could not be loaded.`
+        );
+    }
+
+    return;
+}
 
 if (
   (command === "!quests claim" || command === "!quest claim") &&
