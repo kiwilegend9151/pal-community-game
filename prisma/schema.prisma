@@ -105,10 +105,11 @@ model Expedition {
 model Streamer {
   id String @id @default(uuid())
 
-  twitchId    String @unique
-  channelName String @unique
+  twitchId    String   @unique
+  channelName String   @unique
 
-  live      Boolean   @default(true)
+  live      Boolean @default(true)
+  botEnabled Boolean @default(true)
   lastSpawn DateTime?
 
   monsters Monster[]

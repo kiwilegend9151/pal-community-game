@@ -856,6 +856,81 @@ const messageId =
         return;
     }
 
+if (command === "!stopbot") {
+    if (viewerTwitchId !== tags["room-id"]) {
+        return;
+    }
+
+    try {
+        await prisma.streamer.update({
+            where: {
+                channelName: currentChannel
+            },
+            data: {
+                botEnabled: false
+            }
+        });
+
+        await client.say(
+            currentChannel,
+            "🛑 Bot commands have been disabled for this channel."
+        );
+    } catch (error) {
+        console.error("Stopbot command failed:", error);
+
+        await client.say(
+            currentChannel,
+            "❌ The bot could not be disabled."
+        );
+    }
+
+    return;
+}
+
+if (command === "!startbot") {
+    if (viewerTwitchId !== tags["room-id"]) {
+        return;
+    }
+
+    try {
+        await prisma.streamer.update({
+            where: {
+                channelName: currentChannel
+            },
+            data: {
+                botEnabled: true
+            }
+        });
+
+        await client.say(
+            currentChannel,
+            "✅ Bot commands have been enabled again!"
+        );
+    } catch (error) {
+        console.error("Startbot command failed:", error);
+
+        await client.say(
+            currentChannel,
+            "❌ The bot could not be enabled."
+        );
+    }
+
+    return;
+}
+
+const streamer = await prisma.streamer.findUnique({
+    where: {
+        channelName: currentChannel
+    },
+    select: {
+        botEnabled: true
+    }
+});
+
+if (streamer && !streamer.botEnabled) {
+    return;
+}
+
 if (command === "!dc") {
     await client.say(
         currentChannel,
