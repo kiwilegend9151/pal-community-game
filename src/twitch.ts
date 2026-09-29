@@ -856,8 +856,18 @@ const messageId =
         return;
     }
 
+const streamer = await prisma.streamer.findUnique({
+    where: {
+        channelName: currentChannel
+    },
+    select: {
+        twitchId: true,
+        botEnabled: true
+    }
+});
+
 if (command === "!stopbot") {
-    if (viewerTwitchId !== tags["room-id"]) {
+    if (!streamer || viewerTwitchId !== streamer.twitchId) {
         return;
     }
 
@@ -888,7 +898,7 @@ if (command === "!stopbot") {
 }
 
 if (command === "!startbot") {
-    if (viewerTwitchId !== tags["room-id"]) {
+    if (!streamer || viewerTwitchId !== streamer.twitchId) {
         return;
     }
 
@@ -917,15 +927,6 @@ if (command === "!startbot") {
 
     return;
 }
-
-const streamer = await prisma.streamer.findUnique({
-    where: {
-        channelName: currentChannel
-    },
-    select: {
-        botEnabled: true
-    }
-});
 
 if (streamer && !streamer.botEnabled) {
     return;
