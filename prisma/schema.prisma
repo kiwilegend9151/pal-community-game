@@ -12,10 +12,11 @@ model Player {
   twitchId String @unique
   username String
 
-  level       Int       @default(1)
-  xp          Int       @default(0)
-  coins       Int       @default(100)
-  lastDailyAt DateTime?
+level       Int       @default(1)
+xp          Int       @default(0)
+coins       Int       @default(100)
+lastDailyAt DateTime?
+dailyPeriod String?
 
   palSpheres   Int @default(0)
   megaSpheres  Int @default(0)

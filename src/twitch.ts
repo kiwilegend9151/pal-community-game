@@ -11,14 +11,106 @@ const successfulCatchers = new Map<string, string[]>();
 const catchLocks = new Set<string>();
 const despawnTimers = new Map<string, NodeJS.Timeout>();
 
-const DAILY_REWARD = 100;
-const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DESPAWN_TIME = 90 * 1000;
 const XP_REWARD = 50;
 const EXPEDITION_DURATION = 60 * 60 * 1000;
 const recentMessageIds = new Map<string, number>();
 const leaderboardCooldowns = new Map<string, number>();
 const LEADERBOARD_COOLDOWN = 30 * 1000;
+
+type DailyTier =
+    | "Common"
+    | "Uncommon"
+    | "Rare"
+    | "Epic"
+    | "Legendary";
+
+type DailyReward = {
+    tier: DailyTier;
+    coins: number;
+    palSpheres: number;
+    megaSpheres: number;
+    gigaSpheres: number;
+    hyperSpheres: number;
+};
+
+function rollDailyTier(): DailyTier {
+    const roll = Math.random() * 100;
+
+    if (roll < 1) {
+        return "Legendary";
+    }
+
+    if (roll < 5) {
+        return "Epic";
+    }
+
+    if (roll < 15) {
+        return "Rare";
+    }
+
+    if (roll < 40) {
+        return "Uncommon";
+    }
+
+    return "Common";
+}
+
+function generateDailyReward(): DailyReward {
+    const tier = rollDailyTier();
+
+    switch (tier) {
+        case "Common":
+            return {
+                tier,
+                coins: randomInteger(25, 75),
+                palSpheres: randomInteger(1, 4),
+                megaSpheres: 0,
+                gigaSpheres: 0,
+                hyperSpheres: 0
+            };
+
+        case "Uncommon":
+            return {
+                tier,
+                coins: randomInteger(50, 100),
+                palSpheres: randomInteger(2, 5),
+                megaSpheres: randomInteger(1, 2),
+                gigaSpheres: 0,
+                hyperSpheres: 0
+            };
+
+        case "Rare":
+            return {
+                tier,
+                coins: randomInteger(75, 150),
+                palSpheres: randomInteger(2, 5),
+                megaSpheres: randomInteger(1, 3),
+                gigaSpheres: 1,
+                hyperSpheres: 0
+            };
+
+        case "Epic":
+            return {
+                tier,
+                coins: randomInteger(100, 225),
+                palSpheres: 0,
+                megaSpheres: randomInteger(2, 4),
+                gigaSpheres: randomInteger(1, 3),
+                hyperSpheres: 1
+            };
+
+        case "Legendary":
+            return {
+                tier,
+                coins: randomInteger(150, 300),
+                palSpheres: 0,
+                megaSpheres: 0,
+                gigaSpheres: randomInteger(2, 4),
+                hyperSpheres: randomInteger(1, 3)
+            };
+    }
+}
 
 function randomInteger(minimum: number, maximum: number): number {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
@@ -1664,124 +1756,196 @@ await updateDailyQuestProgress(
         return;
     }
 
-    if (command === "!daily") {
-        try {
-            const player = await prisma.player.upsert({
-                where: {
-                    twitchId: viewerTwitchId
-                },
-                update: {
-                    username: viewerName
-                },
-                create: {
-                    twitchId: viewerTwitchId,
-                    username: viewerName
-                }
-            });
-    
-            const now = new Date();
-            const cooldownCutoff = new Date(
-                now.getTime() - DAILY_COOLDOWN
+if (command === "!daily") {
+    try {
+        const player = await prisma.player.upsert({
+            where: {
+                twitchId: viewerTwitchId
+            },
+            update: {
+                username: viewerName
+            },
+            create: {
+                twitchId: viewerTwitchId,
+                username: viewerName
+            }
+        });
+
+        const now = new Date();
+
+        /*
+         * Daily rewards reset at 12:00 PM UK time.
+         * Europe/London automatically handles GMT/BST.
+         */
+        function getUKDailyPeriodKey(date: Date): string {
+            const shiftedDate = new Date(
+                date.getTime() - 12 * 60 * 60 * 1000
             );
-    
-            /*
-             * updateMany prevents two messages sent at almost the same time
-             * from claiming the reward twice.
-             */
-            const claimResult = await prisma.player.updateMany({
-                where: {
-                    id: player.id,
-                    OR: [
-                        {
-                            lastDailyAt: null
-                        },
-                        {
-                            lastDailyAt: {
-                                lte: cooldownCutoff
-                            }
-                        }
-                    ]
-                },
-                data: {
-                    coins: {
-                        increment: DAILY_REWARD
+
+            const parts = new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Europe/London",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit"
+            }).formatToParts(shiftedDate);
+
+            const year =
+                parts.find((part) => part.type === "year")?.value ?? "";
+
+            const month =
+                parts.find((part) => part.type === "month")?.value ?? "";
+
+            const day =
+                parts.find((part) => part.type === "day")?.value ?? "";
+
+            return `${year}-${month}-${day}`;
+        }
+
+        const currentDailyPeriod = getUKDailyPeriodKey(now);
+
+        /*
+         * Atomically claim the reward.
+         *
+         * This means two !daily messages at almost exactly
+         * the same time cannot both receive a reward.
+         */
+        const reward = generateDailyReward();
+
+        const claimResult = await prisma.player.updateMany({
+            where: {
+                id: player.id,
+                OR: [
+                    {
+                        dailyPeriod: null
                     },
-                    lastDailyAt: now
-                }
-            });
-    
-            if (claimResult.count === 0) {
-                const updatedPlayer = await prisma.player.findUnique({
-                    where: {
-                        id: player.id
+                    {
+                        dailyPeriod: {
+                            not: currentDailyPeriod
+                        }
                     }
-                });
-    
-                if (!updatedPlayer?.lastDailyAt) {
-                    await client.say(
-                        currentChannel,
-                        `❌ ${viewerName}, your daily reward could not be checked.`
-                    );
-    
-                    return;
+                ]
+            },
+            data: {
+                coins: {
+                    increment: reward.coins
+                },
+                palSpheres: {
+                    increment: reward.palSpheres
+                },
+                megaSpheres: {
+                    increment: reward.megaSpheres
+                },
+                gigaSpheres: {
+                    increment: reward.gigaSpheres
+                },
+                hyperSpheres: {
+                    increment: reward.hyperSpheres
+                },
+                lastDailyAt: now,
+                dailyPeriod: currentDailyPeriod
+            }
+        });
+
+        if (claimResult.count === 0) {
+            const ukParts = new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Europe/London",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: false
+            }).formatToParts(now);
+
+            const currentHour = Number(
+                ukParts.find((part) => part.type === "hour")?.value ?? 0
+            );
+
+            const currentMinute = Number(
+                ukParts.find((part) => part.type === "minute")?.value ?? 0
+            );
+
+            let hoursUntilReset: number;
+            let minutesUntilReset: number;
+
+            if (currentHour < 12) {
+                hoursUntilReset = 11 - currentHour;
+                minutesUntilReset = 60 - currentMinute;
+
+                if (minutesUntilReset === 60) {
+                    minutesUntilReset = 0;
+                    hoursUntilReset++;
                 }
-    
-                const nextClaimTime =
-                    updatedPlayer.lastDailyAt.getTime() +
-                    DAILY_COOLDOWN;
-    
-                const remainingMilliseconds = Math.max(
-                    0,
-                    nextClaimTime - Date.now()
-                );
-    
-                const remainingHours = Math.floor(
-                    remainingMilliseconds / (60 * 60 * 1000)
-                );
-    
-                const remainingMinutes = Math.ceil(
-                    (remainingMilliseconds % (60 * 60 * 1000)) /
-                    (60 * 1000)
-                );
-    
-                await client.say(
-                    currentChannel,
-                    `⏳ ${viewerName}, you have already claimed your daily reward. ` +
-                    `Try again in ${remainingHours}h ${remainingMinutes}m.`
-                );
-    
-                return;
+            } else {
+                hoursUntilReset = 23 - currentHour;
+                minutesUntilReset = 60 - currentMinute;
+
+                if (minutesUntilReset === 60) {
+                    minutesUntilReset = 0;
+                    hoursUntilReset++;
+                }
+
+                hoursUntilReset += 12;
             }
 
-await updateDailyQuestProgress(
-  player.id,
-  "claim_daily",
-  1
-);
-    
-            const rewardedPlayer = await prisma.player.findUnique({
-                where: {
-                    id: player.id
-                }
-            });
-    
             await client.say(
                 currentChannel,
-                `🎁 ${viewerName} claimed their daily reward! ` +
-                `+${DAILY_REWARD} coins. ` +
-                `Balance: ${rewardedPlayer?.coins ?? player.coins + DAILY_REWARD} coins.`
+                `⏳ ${viewerName}, you have already claimed today's daily reward. ` +
+                `Your next reward is available at 12:00 PM UK time ` +
+                `(${hoursUntilReset}h ${minutesUntilReset}m).`
             );
-        } catch (error) {
-            console.error("Daily command failed:", error);
-    
-            await client.say(
-                currentChannel,
-                `❌ Sorry ${viewerName}, your daily reward could not be claimed.`
-            );
+
+            return;
         }
-    
-        return;
+
+        await updateDailyQuestProgress(
+            player.id,
+            "claim_daily",
+            1
+        );
+
+        const rewardedPlayer = await prisma.player.findUnique({
+            where: {
+                id: player.id
+            }
+        });
+
+        const rewardParts: string[] = [];
+
+        if (reward.coins > 0) {
+            rewardParts.push(`${reward.coins} coins`);
+        }
+
+        if (reward.palSpheres > 0) {
+            rewardParts.push(`${reward.palSpheres} Pal Spheres`);
+        }
+
+        if (reward.megaSpheres > 0) {
+            rewardParts.push(`${reward.megaSpheres} Mega Spheres`);
+        }
+
+        if (reward.gigaSpheres > 0) {
+            rewardParts.push(`${reward.gigaSpheres} Giga Spheres`);
+        }
+
+        if (reward.hyperSpheres > 0) {
+            rewardParts.push(`${reward.hyperSpheres} Hyper Spheres`);
+        }
+
+        await client.say(
+            currentChannel,
+            `🎁 ${viewerName} received a ${reward.tier} daily reward! ` +
+            `🎉 ${rewardParts.join(" • ")}. ` +
+            `💰 Balance: ${rewardedPlayer?.coins ?? 0} coins.`
+        );
+    } catch (error) {
+        console.error("Daily command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your daily reward could not be claimed.`
+        );
     }
+
+    return;
+}
 
     if (
         command === "!expedition" ||
