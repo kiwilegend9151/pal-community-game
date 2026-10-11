@@ -4,6 +4,9 @@ type MonsterTemplate = {species: string;hp: number;attack: number;defense: numbe
 
 type ActiveMonster = {id: string;species: string;};
 
+import { createHash } from "node:crypto";
+
+
 const connectedChannels = new Map<string, tmi.Client>();
 const activeMonsters = new Map<string, ActiveMonster>();
 const catchAttempts = new Map<string, Set<string>>();
@@ -907,6 +910,116 @@ const messageId =
         tags["display-name"] ??
         tags.username ??
         "A viewer";
+
+
+if (command.startsWith("!link ")) {
+    const suppliedCode = message.trim().split(/\s+/)[1];
+
+    if (!suppliedCode || !/^[a-f0-9]{32}$/i.test(suppliedCode)) {
+        await client.say(
+            currentChannel,
+            `❌ ${viewerName}, that linking code is invalid. Generate a new one with Discord /link.`
+        );
+        return;
+    }
+
+    const codeHash = createHash("sha256")
+        .update(suppliedCode)
+        .digest("hex");
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            const linkCode = await tx.discordLinkCode.findUnique({
+                where: { code: codeHash },
+            });
+
+            if (!linkCode || linkCode.expiresAt <= new Date()) {
+                if (linkCode) {
+                    await tx.discordLinkCode.delete({
+                        where: { id: linkCode.id },
+                    });
+                }
+
+                return { status: "invalid" as const };
+            }
+
+            const player = await tx.player.findUnique({
+                where: { twitchId: viewerTwitchId },
+                select: { id: true, discordId: true },
+            });
+
+            if (!player) {
+                return { status: "no-player" as const };
+            }
+
+            if (player.discordId) {
+                return { status: "twitch-linked" as const };
+            }
+
+            const existingDiscordLink = await tx.player.findUnique({
+                where: { discordId: linkCode.discordId },
+                select: { id: true },
+            });
+
+            if (existingDiscordLink) {
+                return { status: "discord-linked" as const };
+            }
+
+            await tx.player.update({
+                where: { id: player.id },
+                data: { discordId: linkCode.discordId },
+            });
+
+            await tx.discordLinkCode.delete({
+                where: { id: linkCode.id },
+            });
+
+            return { status: "success" as const };
+        });
+
+        switch (result.status) {
+            case "success":
+                await client.say(
+                    currentChannel,
+                    `✅ ${viewerName}, your Twitch account has been linked to Discord!`
+                );
+                break;
+            case "twitch-linked":
+                await client.say(
+                    currentChannel,
+                    `ℹ️ ${viewerName}, your Twitch account is already linked to Discord.`
+                );
+                break;
+            case "discord-linked":
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, that Discord account is already linked to a Twitch player.`
+                );
+                break;
+            case "no-player":
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, use !start first to create your player account.`
+                );
+                break;
+            case "invalid":
+                await client.say(
+                    currentChannel,
+                    `❌ ${viewerName}, that code is invalid or expired. Generate a new one with Discord /link.`
+                );
+                break;
+        }
+    } catch (error) {
+        console.error("Twitch account linking failed:", error);
+        await client.say(
+            currentChannel,
+            `❌ ${viewerName}, account linking failed. Please try again.`
+        );
+    }
+
+    return;
+}
+
 
     if (!viewerTwitchId) {
         return;

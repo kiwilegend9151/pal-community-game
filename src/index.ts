@@ -10,6 +10,8 @@ import extensionRoutes from "./routes/extension";
 import { startSpawnTimer } from "./services/spawnTimer";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { startDiscordBot } from "./discord";
+import twitchAuthRoutes from "./routes/twitchAuth";
 
 const shopLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -101,6 +103,7 @@ app.use(generalLimiter);
 
 app.use(express.json());
 
+app.use("/auth/twitch", twitchAuthRoutes);
 
 app.use(
     "/extension-assets",
@@ -142,6 +145,7 @@ io.on("connection", (socket) => {
     });
 });
 
+
 const PORT = Number(process.env.PORT) || 3000;
 
 server.listen(PORT, async () => {
@@ -151,5 +155,11 @@ server.listen(PORT, async () => {
         await startSpawnTimer();
     } catch (error) {
         console.error("Could not start spawn timer:", error);
+    }
+
+    try {
+        await startDiscordBot();
+    } catch (error) {
+        console.error("Could not start Discord bot:", error);
     }
 });

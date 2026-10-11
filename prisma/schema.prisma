@@ -10,6 +10,7 @@ datasource db {
 model Player {
   id       String @id @default(uuid())
   twitchId String @unique
+  discordId String? @unique
   username String
 
 level       Int       @default(1)
@@ -143,4 +144,23 @@ model DailyQuest {
   @@index([playerId])
   @@index([questDate])
   @@index([playerId, questDate])
+}
+
+model DiscordLinkCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  discordId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model TwitchLinkSession {
+  id          String   @id @default(uuid())
+  state       String   @unique
+  discordId   String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([discordId])
 }
