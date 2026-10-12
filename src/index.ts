@@ -60,6 +60,18 @@ app.use(
 
 const extensionPath = path.join(process.cwd(), "extension", "dist");
 
+const publicPath = path.join(process.cwd(), "public");
+
+app.use(express.static(publicPath));
+
+app.get("/terms", (_req, res) => {
+    res.sendFile(path.join(publicPath, "terms.html"));
+});
+
+app.get("/privacy", (_req, res) => {
+    res.sendFile(path.join(publicPath, "privacy.html"));
+});
+
 const allowedOrigins = [
     "https://twitch.tv",
     "https://www.twitch.tv",
