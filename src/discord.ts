@@ -9,7 +9,13 @@ import {
 import { randomBytes } from "node:crypto";
 import { prisma } from "./database";
 
+import {
+  generateDailyReward,
+  updateDailyQuestProgress,
+} from "./twitch";
+
 const LINK_EXPIRY_MS = 10 * 60 * 1000;
+const DAILY_CHANNEL_ID = "1559232551481245898";
 
 export async function startDiscordBot(): Promise<void> {
   const token = process.env.DISCORD_BOT_TOKEN;
@@ -26,14 +32,19 @@ export async function startDiscordBot(): Promise<void> {
     intents: [GatewayIntentBits.Guilds],
   });
 
-  const commands = [
-    new SlashCommandBuilder()
-      .setName("ping")
-      .setDescription("Check whether the bot is online."),
-    new SlashCommandBuilder()
-      .setName("link")
-      .setDescription("Link your Discord account to your Twitch player."),
-  ].map((command) => command.toJSON());
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Check whether the bot is online."),
+  new SlashCommandBuilder()
+    .setName("link")
+    .setDescription("Link your Discord account to your Twitch player."),
+  new SlashCommandBuilder()
+    .setName("daily")
+    .setDescription("Claim your daily Pal Community Game reward."),
+].map((command) => command.toJSON());
+
 
   const rest = new REST({ version: "10" }).setToken(token);
 
@@ -49,6 +60,105 @@ export async function startDiscordBot(): Promise<void> {
         content: "🏓 The Pal Community Game bot is online!",
         ephemeral: true,
       });
+      return;
+    }
+
+
+    if (interaction.commandName === "daily") {
+      if (interaction.channelId !== DAILY_CHANNEL_ID) {
+        await interaction.reply({
+          content: "Please use `/daily` in <#1559232551481245898>.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      await interaction.deferReply();
+
+      try {
+        const player = await prisma.player.findUnique({
+          where: { discordId: interaction.user.id },
+          select: { id: true },
+        });
+
+        if (!player) {
+          await interaction.editReply(
+            "🔗 Link your Twitch account first using `/link`."
+          );
+          return;
+        }
+
+        const now = new Date();
+        const shiftedDate = new Date(
+          now.getTime() - 12 * 60 * 60 * 1000
+        );
+
+        const parts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Europe/London",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(shiftedDate);
+
+        const year = parts.find(p => p.type === "year")?.value ?? "";
+        const month = parts.find(p => p.type === "month")?.value ?? "";
+        const day = parts.find(p => p.type === "day")?.value ?? "";
+        const currentDailyPeriod = `${year}-${month}-${day}`;
+
+        const reward = generateDailyReward();
+
+        const claimed = await prisma.player.updateMany({
+          where: {
+            id: player.id,
+            OR: [
+              { dailyPeriod: null },
+              { dailyPeriod: { not: currentDailyPeriod } },
+            ],
+          },
+          data: {
+            coins: { increment: reward.coins },
+            palSpheres: { increment: reward.palSpheres },
+            megaSpheres: { increment: reward.megaSpheres },
+            gigaSpheres: { increment: reward.gigaSpheres },
+            hyperSpheres: { increment: reward.hyperSpheres },
+            lastDailyAt: now,
+            dailyPeriod: currentDailyPeriod,
+          },
+        });
+
+        if (claimed.count === 0) {
+          await interaction.editReply(
+            "⏳ You've already claimed today's reward. Your next reward is available at 12:00 PM UK time."
+          );
+          return;
+        }
+
+        await updateDailyQuestProgress(player.id, "claim_daily", 1);
+
+        const updatedPlayer = await prisma.player.findUnique({
+          where: { id: player.id },
+          select: { coins: true },
+        });
+
+        const rewards: string[] = [];
+        if (reward.coins > 0) rewards.push(`${reward.coins} coins`);
+        if (reward.palSpheres > 0) rewards.push(`${reward.palSpheres} Pal Spheres`);
+        if (reward.megaSpheres > 0) rewards.push(`${reward.megaSpheres} Mega Spheres`);
+        if (reward.gigaSpheres > 0) rewards.push(`${reward.gigaSpheres} Giga Spheres`);
+        if (reward.hyperSpheres > 0) rewards.push(`${reward.hyperSpheres} Hyper Spheres`);
+
+        await interaction.editReply(
+          `🎁 You received a **${reward.tier}** daily reward!\n` +
+          `🎉 ${rewards.join(" • ")}\n` +
+          `💰 Balance: ${updatedPlayer?.coins ?? 0} coins.`
+        );
+      } catch (error) {
+        console.error("Discord daily command failed:", error);
+        await interaction.editReply(
+          "❌ Your daily reward couldn't be claimed. Please try again later."
+        );
+      }
+
       return;
     }
 
@@ -70,6 +180,7 @@ export async function startDiscordBot(): Promise<void> {
         );
         return;
       }
+
 
       const twitchClientId = process.env.TWITCH_CLIENT_ID;
       const redirectUri = process.env.TWITCH_REDIRECT_URI;

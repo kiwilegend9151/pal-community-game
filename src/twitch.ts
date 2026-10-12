@@ -28,7 +28,7 @@ type DailyTier =
     | "Epic"
     | "Legendary";
 
-type DailyReward = {
+export type DailyReward = {
     tier: DailyTier;
     coins: number;
     palSpheres: number;
@@ -59,9 +59,8 @@ function rollDailyTier(): DailyTier {
     return "Common";
 }
 
-function generateDailyReward(): DailyReward {
+export function generateDailyReward(): DailyReward {
     const tier = rollDailyTier();
-
     switch (tier) {
         case "Common":
             return {
@@ -322,7 +321,7 @@ function formatQuestReward(
   }
 }
 
-async function updateDailyQuestProgress(
+export async function updateDailyQuestProgress(
   playerId: string,
   questType: DailyQuestType,
   amount = 1
