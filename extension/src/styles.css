@@ -495,3 +495,68 @@ button, input { font: inherit; }
   font-size: 32px;
   opacity: 0.4;
 }
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shop-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shop-item-info strong {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.shop-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shop-controls input {
+  width: 55px;
+  box-sizing: border-box;
+  padding: 8px 5px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #181818;
+  color: #fff;
+  text-align: center;
+  font-size: 15px;
+}
+
+.shop-controls input:focus {
+  outline: 2px solid #3bbcff;
+  outline-offset: 1px;
+}
+
+.shop-controls .primary-button {
+  white-space: nowrap;
+}
+
+.shop-item-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.shop-item-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.shop-item-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

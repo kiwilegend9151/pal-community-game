@@ -597,36 +597,59 @@ async function clearActiveEncounter(channelName: string): Promise<void> {
     successfulCatchers.delete(channelName);
 }
 
+const PAL_LEVEL_CAP = 80;
+
+const PAL_LEVEL_RANGES: Record<
+    SupportedRarity,
+    { min: number; max: number }
+> = {
+    Common: { min: 1, max: 10 },
+    Rare: { min: 5, max: 20 },
+    Epic: { min: 15, max: 35 },
+    Legendary: { min: 30, max: 60 },
+    Mythical: { min: 40, max: 70 }
+};
+
+function generatePalLevel(rarity: string): number {
+    const supportedRarity = getSupportedRarity(rarity);
+    const range = PAL_LEVEL_RANGES[supportedRarity];
+
+    return randomInteger(
+        range.min,
+        Math.min(range.max, PAL_LEVEL_CAP)
+    );
+}
+
 function getRandomMonster(): MonsterTemplate {
-  const roll = Math.random() * 100;
+    const roll = Math.random() * 100;
 
-  let rarity: SupportedRarity;
+    let rarity: SupportedRarity;
 
-  if (roll < 44.9) {
-    rarity = "Common";
-  } else if (roll < 74.9) {
-    rarity = "Rare";
-  } else if (roll < 94.9) {
-    rarity = "Epic";
-  } else if (roll < 99.9) {
-    rarity = "Legendary";
-  } else {
-    rarity = "Mythical";
-  }
+    if (roll < 44.9) {
+        rarity = "Common";
+    } else if (roll < 74.9) {
+        rarity = "Rare";
+    } else if (roll < 94.9) {
+        rarity = "Epic";
+    } else if (roll < 99.9) {
+        rarity = "Legendary";
+    } else {
+        rarity = "Mythical";
+    }
 
-  const availableMonsters = monsterTemplates.filter(
-    (monster) => getSupportedRarity(monster.rarity) === rarity
-  );
+    const availableMonsters = monsterTemplates.filter(
+        (monster) => getSupportedRarity(monster.rarity) === rarity
+    );
 
-  if (availableMonsters.length === 0) {
-    return monsterTemplates[
-      Math.floor(Math.random() * monsterTemplates.length)
+    if (availableMonsters.length === 0) {
+        return monsterTemplates[
+            Math.floor(Math.random() * monsterTemplates.length)
+        ];
+    }
+
+    return availableMonsters[
+        Math.floor(Math.random() * availableMonsters.length)
     ];
-  }
-
-  return availableMonsters[
-    Math.floor(Math.random() * availableMonsters.length)
-  ];
 }
 
 async function awardPlayer(
@@ -2777,16 +2800,17 @@ try {
     catchAttempts.delete(normalizedChannel);
     successfulCatchers.delete(normalizedChannel);
 
-    const template = getRandomMonster();
+const template = getRandomMonster();
+const spawnLevel = generatePalLevel(template.rarity);
 
-    const monster = await prisma.monster.create({
-        data: {
-            ...template,
-            level: 1,
-            shiny: Math.random() < 0.005,
-            streamerId: streamer.id
-        }
-    });
+const monster = await prisma.monster.create({
+    data: {
+        ...template,
+        level: spawnLevel,
+        shiny: Math.random() < 0.005,
+        streamerId: streamer.id
+    }
+});
 
     activeMonsters.set(normalizedChannel, {
         id: monster.id,

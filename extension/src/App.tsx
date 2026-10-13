@@ -32,6 +32,14 @@ export default function App() {
   const [error, setError] = useState("");
   const [installState, setInstallState] =
     useState<InstallState>("installing");
+
+const [shopQuantities, setShopQuantities] = useState({
+  pal: 1,
+  mega: 1,
+  giga: 1,
+  hyper: 1
+});
+
 const [expedition, setExpedition] =
   useState<ExpeditionStatusResponse>({ active: false });
 
@@ -39,6 +47,8 @@ const [expeditionPalId, setExpeditionPalId] = useState("");
 const [expeditionMessage, setExpeditionMessage] = useState("");
 const [expeditionBusy, setExpeditionBusy] = useState(false);
 const [expeditionNow, setExpeditionNow] = useState(Date.now());
+
+
 
 const params = new URLSearchParams(window.location.search);
 
@@ -361,99 +371,97 @@ console.log("[APP] activeTab:", activeTab);
     <h1>Shop</h1>
 
     <div className="inventory-list">
-      <article>
-        <span>Pal Sphere</span>
-        <strong>10 Coins</strong>
-        <button
-          className="primary-button"
-          onClick={async () => {
-            try {
-              await extensionApi.buySphere("pal", 1);
-              await loadData();
-            } catch (shopError) {
-              setError(
-                shopError instanceof Error
-                  ? shopError.message
-                  : "Unable to buy Pal Sphere"
-              );
-            }
-          }}
-        >
-          Buy
-        </button>
-      </article>
+{[
+  {
+    id: "pal",
+    name: "Pal Sphere",
+    price: 10,
+    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
+  },
+  {
+    id: "mega",
+    name: "Mega Sphere",
+    price: 20,
+    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
+  },
+  {
+    id: "giga",
+    name: "Giga Sphere",
+    price: 30,
+    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
+  },
+  {
+    id: "hyper",
+    name: "Hyper Sphere",
+    price: 50,
+    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
+  }
+].map((item) => (
+        <article key={item.id} className="shop-item">
+         <div className="shop-item-info">
+  <img
+    src={item.image}
+    alt=""
+    className="shop-item-image"
+  />
+  <div>
+    <span>{item.name}</span>
+    <strong>{item.price} Coins each</strong>
+  </div>
+</div>
 
-      <article>
-        <span>Mega Sphere</span>
-        <strong>20 Coins</strong>
-        <button
-          className="primary-button"
-          onClick={async () => {
-            try {
-              await extensionApi.buySphere("mega", 1);
-              await loadData();
-            } catch (shopError) {
-              setError(
-                shopError instanceof Error
-                  ? shopError.message
-                  : "Unable to buy Mega Sphere"
-              );
-            }
-          }}
-        >
-          Buy
-        </button>
-      </article>
+          <div className="shop-controls">
+            <input
+              type="number"
+              min="1"
+              value={shopQuantities[item.id as keyof typeof shopQuantities]}
+              onChange={(event) => {
+                const value = Math.max(
+                  1,
+                  Number(event.target.value) || 1
+                );
 
-      <article>
-        <span>Giga Sphere</span>
-        <strong>30 Coins</strong>
-        <button
-          className="primary-button"
-          onClick={async () => {
-            try {
-              await extensionApi.buySphere("giga", 1);
-              await loadData();
-            } catch (shopError) {
-              setError(
-                shopError instanceof Error
-                  ? shopError.message
-                  : "Unable to buy Giga Sphere"
-              );
-            }
-          }}
-        >
-          Buy
-        </button>
-      </article>
+                setShopQuantities((current) => ({
+                  ...current,
+                  [item.id]: value
+                }));
+              }}
+            />
 
-      <article>
-        <span>Hyper Sphere</span>
-        <strong>50 Coins</strong>
-        <button
-          className="primary-button"
-          onClick={async () => {
-            try {
-              await extensionApi.buySphere("hyper", 1);
-              await loadData();
-            } catch (shopError) {
-              setError(
-                shopError instanceof Error
-                  ? shopError.message
-                  : "Unable to buy Hyper Sphere"
-              );
-            }
-          }}
-        >
-          Buy
-        </button>
-      </article>
+            <button
+              className="primary-button"
+              onClick={async () => {
+                try {
+                  const quantity =
+                    shopQuantities[
+                      item.id as keyof typeof shopQuantities
+                    ];
+
+                  await extensionApi.buySphere(
+                    item.id as "pal" | "mega" | "giga" | "hyper",
+                    quantity
+                  );
+
+                  await loadData();
+                } catch (shopError) {
+                  setError(
+                    shopError instanceof Error
+                      ? shopError.message
+                      : `Unable to buy ${item.name}`
+                  );
+                }
+              }}
+            >
+              Buy
+            </button>
+          </div>
+        </article>
+      ))}
     </div>
 
     {error && <p className="error-text">{error}</p>}
   </>
 )}
-
         {activeTab === "profile" && (
           <>
             <h1>{profile.username}</h1>
