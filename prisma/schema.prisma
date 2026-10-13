@@ -61,6 +61,7 @@ model Monster {
   type1   String?
   type2   String?
   level   Int
+  palXp   Int     @default(0)
   hp      Int
   attack  Int
   defense Int

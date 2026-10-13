@@ -2332,6 +2332,37 @@ if (command === "!daily") {
                     };
                 }
 
+
+                const PAL_EXPEDITION_XP = 100;
+                const monster = expedition.monster;
+
+                let palXp = monster.palXp;
+                let palLevel = monster.level;
+                let levelUps = 0;
+
+                // Award XP only if the Pal is below level 80.
+                if (palLevel < PAL_LEVEL_CAP) {
+                    palXp += PAL_EXPEDITION_XP;
+
+                    while (
+                        palLevel < PAL_LEVEL_CAP &&
+                        palXp >= palLevel * 100
+                    ) {
+                        palXp -= palLevel * 100;
+                        palLevel++;
+                        levelUps++;
+                    }
+
+                    await transaction.monster.update({
+                        where: { id: monster.id },
+                        data: {
+                            palXp,
+                            level: palLevel
+                        }
+                    });
+                }
+
+
                 await transaction.player.update({
                     where: {
                         id: player.id
@@ -2362,7 +2393,10 @@ if (command === "!daily") {
                     palSphereReward: expedition.palSphereReward,
                     paldiumReward: expedition.paldiumReward,
                     woodReward: expedition.woodReward,
-                    stoneReward: expedition.stoneReward
+                    stoneReward: expedition.stoneReward,
+    		    palXp,
+    		    palLevel,
+  		    levelUps
                 };
             });
 
@@ -2410,16 +2444,25 @@ if (expeditionPlayer) {
   );
 }
 
-            await client.say(
-                currentChannel,
-                `🎉 ${result.monsterSpecies} returned with ` +
-                `${result.coinReward} coins, ` +
-                `${result.palSphereReward} Pal Sphere` +
-                `${result.palSphereReward === 1 ? "" : "s"}, ` +
-                `${result.paldiumReward} Paldium, ` +
-                `${result.woodReward} Wood and ` +
-                `${result.stoneReward} Stone!`
-            );
+            const levelUpText = result.levelUps > 0
+    ? ` 🎉 Levelled up to ${result.palLevel}!`
+    : result.palLevel >= PAL_LEVEL_CAP
+        ? " 🏆 Maximum level reached!"
+        : "";
+
+await client.say(
+    currentChannel,
+    `🎉 ${result.monsterSpecies} returned with ` +
+    `${result.coinReward} coins, ` +
+    `${result.palSphereReward} Pal Sphere` +
+    `${result.palSphereReward === 1 ? "" : "s"}, ` +
+    `${result.paldiumReward} Paldium, ` +
+    `${result.woodReward} Wood and ` +
+    `${result.stoneReward} Stone! ` +
+    `🐾 Pal Level ${result.palLevel} ` +
+    `(${result.palXp}/${result.palLevel * 100} XP).` +
+    levelUpText
+);
         } catch (error) {
             console.error("Expedition claim command failed:", error);
 
