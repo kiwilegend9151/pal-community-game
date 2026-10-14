@@ -203,6 +203,7 @@ function randomInteger(minimum: number, maximum: number): number {
     return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 }
 
+
 type DailyQuestType =
   | "catch_pals"
   | "catch_rare_plus"
@@ -211,7 +212,17 @@ type DailyQuestType =
   | "complete_expedition"
   | "craft_spheres"
   | "claim_daily"
-  | "catch_lucky";
+  | "catch_lucky"
+  | "catch_neutral"
+  | "catch_fire"
+  | "catch_water"
+  | "catch_electric"
+  | "catch_grass"
+  | "catch_ice"
+  | "catch_ground"
+  | "catch_dark"
+  | "catch_dragon";
+
 
 type QuestTemplate = {
   questType: DailyQuestType;
@@ -259,7 +270,53 @@ const DAILY_QUEST_TEMPLATES: QuestTemplate[] = [
     questType: "catch_lucky",
     title: "Catch 1 Lucky Pal",
     target: 1
+  },
+  {
+    questType: "catch_neutral",
+    title: "Catch 2 Neutral-type Pals",
+    target: 2
+  },
+  {
+    questType: "catch_fire",
+    title: "Catch 1 Fire-type Pal",
+    target: 1
+  },
+  {
+    questType: "catch_water",
+    title: "Catch 1 Water-type Pal",
+    target: 1
+  },
+  {
+    questType: "catch_electric",
+    title: "Catch 1 Electric-type Pal",
+    target: 1
+  },
+  {
+    questType: "catch_grass",
+    title: "Catch 1 Grass-type Pal",
+    target: 1
+  },
+  {
+    questType: "catch_ice",
+    title: "Catch 2 Ice-type Pals",
+    target: 2
+  },
+  {
+    questType: "catch_ground",
+    title: "Catch 2 Ground-type Pals",
+    target: 2
+  },
+  {
+    questType: "catch_dark",
+    title: "Catch 1 Dark-type Pal",
+    target: 1
+  },
+  {
+    questType: "catch_dragon",
+    title: "Catch 2 Dragon-type Pals",
+    target: 2
   }
+
 ];
 
 function generateDailyQuestReward(): {
@@ -3032,6 +3089,39 @@ if (caughtMonster.shiny) {
     1
   );
 }
+
+
+const caughtTypes = new Set(
+  [caughtMonster.type1, caughtMonster.type2]
+    .filter((type): type is string => Boolean(type))
+    .map(type => type.trim().toLowerCase())
+);
+
+const typeQuestMap: Record<string, DailyQuestType> = {
+  neutral: "catch_neutral",
+  fire: "catch_fire",
+  water: "catch_water",
+  electric: "catch_electric",
+  grass: "catch_grass",
+  ice: "catch_ice",
+  ground: "catch_ground",
+  dark: "catch_dark",
+  dragon: "catch_dragon"
+};
+
+for (const type of caughtTypes) {
+  const questType = typeQuestMap[type];
+
+  if (questType) {
+    await updateDailyQuestProgress(
+      player.id,
+      questType,
+      1
+    );
+  }
+}
+
+
 
         const catchers = successfulCatchers.get(currentChannel) ?? [];
         catchers.push(viewerName);
