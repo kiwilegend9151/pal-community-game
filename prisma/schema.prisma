@@ -165,3 +165,17 @@ model TwitchLinkSession {
   @@index([expiresAt])
   @@index([discordId])
 }
+
+
+model HalloweenEventProgress {
+  id              String   @id @default(uuid())
+  playerId        String
+  eventYear       Int
+  catches         Int      @default(0)
+  rewardClaimed   Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerId, eventYear])
+  @@index([eventYear])
+}

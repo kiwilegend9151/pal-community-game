@@ -21,6 +21,91 @@ const recentMessageIds = new Map<string, number>();
 const leaderboardCooldowns = new Map<string, number>();
 const LEADERBOARD_COOLDOWN = 30 * 1000;
 
+
+const HALLOWEEN_EVENT_START_MONTH = 10; // October
+const HALLOWEEN_EVENT_START_DAY = 17;
+const HALLOWEEN_EVENT_END_MONTH = 11; // November
+const HALLOWEEN_EVENT_END_DAY = 4;
+
+const HALLOWEEN_CATCH_TARGET = 30;
+const HALLOWEEN_SPAWN_CHANCE = 0.40;
+
+const HALLOWEEN_PALS = [
+    "Spooky Cattiva",
+    "Party Night Depresso",
+    "Golden Relaxaurus",
+    "Crown Chillet",
+    "Sailor Quivern",
+    "Fortune Bringer Lyleen"
+];
+
+const HALLOWEEN_REWARD_SPECIES = "Desert King Anubis";
+
+
+
+function isHalloweenEventActive(date = new Date()): boolean {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(date);
+
+    const month = Number(
+        parts.find(part => part.type === "month")?.value
+    );
+    const day = Number(
+        parts.find(part => part.type === "day")?.value
+    );
+
+    const afterStart = month > 10 || (month === 10 && day >= 17);
+    const beforeEnd = month < 11 || (month === 11 && day <= 4);
+
+    return afterStart && beforeEnd;
+}
+
+
+function isHalloweenPal(template: MonsterTemplate): boolean {
+    const species = template.species.trim().toLowerCase();
+
+    const isDarkType =
+        template.type1?.trim().toLowerCase() === "dark" ||
+        template.type2?.trim().toLowerCase() === "dark";
+
+    const isSpecialVariant = HALLOWEEN_PALS.some(
+        pal => pal.toLowerCase() === species
+    );
+
+    return isDarkType || isSpecialVariant;
+}
+
+
+function getHalloweenMonster(): MonsterTemplate {
+    const halloweenMonsters = monsterTemplates.filter(isHalloweenPal);
+
+    if (halloweenMonsters.length === 0) {
+        throw new Error("No Halloween monsters found in the monster templates.");
+    }
+
+    return halloweenMonsters[
+        Math.floor(Math.random() * halloweenMonsters.length)
+    ];
+}
+
+
+
+function getUKCalendarYear(date = new Date()): number {
+    const year = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        year: "numeric"
+    }).format(date);
+
+    return Number(year);
+}
+
+
+
+
 type DailyTier =
     | "Common"
     | "Uncommon"
@@ -1158,6 +1243,182 @@ if (command === "!startbot") {
 if (streamer && !streamer.botEnabled) {
     return;
 }
+
+
+if (command === "!event" || command === "!event claim") {
+    try {
+        const player = await prisma.player.findUnique({
+            where: { twitchId: viewerTwitchId }
+        });
+
+        if (!player) {
+            await client.say(
+                currentChannel,
+                `🎃 ${viewerName}, use !start first to create your player account.`
+            );
+            return;
+        }
+
+        const eventYear = getUKCalendarYear();
+
+        if (command === "!event") {
+            const progress = await prisma.halloweenEventProgress.findUnique({
+                where: {
+                    playerId_eventYear: {
+                        playerId: player.id,
+                        eventYear
+                    }
+                }
+            });
+
+            const catches = progress?.catches ?? 0;
+            const rewardStatus = progress?.rewardClaimed
+                ? "Reward claimed"
+                : catches >= HALLOWEEN_CATCH_TARGET
+                    ? "Reward ready — use !event claim"
+                    : "Reward not yet earned";
+
+            await client.say(
+                currentChannel,
+                `🎃 Halloween Event (${eventYear}) | ` +
+                `${player.username}: ${catches}/${HALLOWEEN_CATCH_TARGET} qualifying catches | ` +
+                `${rewardStatus} | ` +
+                `Event dates: 17 Oct–4 Nov UK time.`
+            );
+
+            return;
+        }
+
+        if (!isHalloweenEventActive()) {
+            await client.say(
+                currentChannel,
+                `🎃 ${viewerName}, rewards can only be claimed during the Halloween event (17 Oct–4 Nov UK time).`
+            );
+            return;
+        }
+
+        const rewardTemplate = monsterTemplates.find(
+            template =>
+                template.species.trim().toLowerCase() ===
+                HALLOWEEN_REWARD_SPECIES.toLowerCase()
+        );
+
+        if (!rewardTemplate) {
+            throw new Error(
+                `Reward template not found: ${HALLOWEEN_REWARD_SPECIES}`
+            );
+        }
+
+        const result = await prisma.$transaction(async tx => {
+            const claim = await tx.halloweenEventProgress.updateMany({
+                where: {
+                    playerId: player.id,
+                    eventYear,
+                    catches: { gte: HALLOWEEN_CATCH_TARGET },
+                    rewardClaimed: false
+                },
+                data: {
+                    rewardClaimed: true
+                }
+            });
+
+            if (claim.count !== 1) {
+                const progress = await tx.halloweenEventProgress.findUnique({
+                    where: {
+                        playerId_eventYear: {
+                            playerId: player.id,
+                            eventYear
+                        }
+                    }
+                });
+
+                if (!progress) {
+                    return { status: "no-progress" as const };
+                }
+
+                if (progress.rewardClaimed) {
+                    return { status: "claimed" as const };
+                }
+
+                if (progress.catches < HALLOWEEN_CATCH_TARGET) {
+                    return {
+                        status: "not-enough" as const,
+                        catches: progress.catches
+                    };
+                }
+
+                return { status: "retry" as const };
+            }
+
+            await tx.monster.create({
+                data: {
+                    species: rewardTemplate.species.trim(),
+                    paldeck: rewardTemplate.paldeck,
+                    type1: rewardTemplate.type1,
+                    type2: rewardTemplate.type2,
+                    level: generatePalLevel(rewardTemplate.rarity),
+                    hp: rewardTemplate.hp,
+                    attack: rewardTemplate.attack,
+                    defense: rewardTemplate.defense,
+                    speed: rewardTemplate.speed,
+                    rarity: rewardTemplate.rarity,
+                    shiny: false,
+                    ownerId: player.id
+                }
+            });
+
+            return { status: "success" as const };
+        });
+
+        switch (result.status) {
+            case "success":
+                await client.say(
+                    currentChannel,
+                    `🎉 ${viewerName} claimed the Halloween reward: ` +
+                    `${HALLOWEEN_REWARD_SPECIES}! Happy Halloween!`
+                );
+                break;
+
+            case "no-progress":
+                await client.say(
+                    currentChannel,
+                    `🎃 ${viewerName}, you have 0/${HALLOWEEN_CATCH_TARGET} qualifying Halloween catches.`
+                );
+                break;
+
+            case "not-enough":
+                await client.say(
+                    currentChannel,
+                    `🎃 ${viewerName}, you have ${result.catches}/${HALLOWEEN_CATCH_TARGET} qualifying catches. Keep going!`
+                );
+                break;
+
+            case "claimed":
+                await client.say(
+                    currentChannel,
+                    `🎃 ${viewerName}, you've already claimed this year's Halloween reward.`
+                );
+                break;
+
+            case "retry":
+                await client.say(
+                    currentChannel,
+                    `⏳ ${viewerName}, your claim could not be completed. Please try again.`
+                );
+                break;
+        }
+    } catch (error) {
+        console.error("Halloween event command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, the Halloween event command failed. Please try again.`
+        );
+    }
+
+    return;
+}
+
 
 if (command === "!dc") {
     await client.say(
@@ -2642,6 +2903,44 @@ await updateDailyQuestProgress(
                 }
             });
 
+
+const eventYear = getUKCalendarYear();
+
+if (
+    isHalloweenEventActive() &&
+    isHalloweenPal({
+        species: wildMonster.species,
+        hp: wildMonster.hp,
+        attack: wildMonster.attack,
+        defense: wildMonster.defense,
+        speed: wildMonster.speed,
+        paldeck: wildMonster.paldeck ?? "",
+        type1: wildMonster.type1 ?? "",
+        type2: wildMonster.type2 ?? "",
+        rarity: wildMonster.rarity
+    })
+) {
+    await tx.halloweenEventProgress.upsert({
+        where: {
+            playerId_eventYear: {
+                playerId: player.id,
+                eventYear
+            }
+        },
+        create: {
+            playerId: player.id,
+            eventYear,
+            catches: 1
+        },
+        update: {
+            catches: {
+                increment: 1
+            }
+        }
+    });
+}
+
+
             const refreshedPlayer = await tx.player.findUnique({
                 where: {
                     id: player.id
@@ -2843,7 +3142,12 @@ try {
     catchAttempts.delete(normalizedChannel);
     successfulCatchers.delete(normalizedChannel);
 
-const template = getRandomMonster();
+
+const template =
+    isHalloweenEventActive() && Math.random() < HALLOWEEN_SPAWN_CHANCE
+        ? getHalloweenMonster()
+        : getRandomMonster();
+
 const spawnLevel = generatePalLevel(template.rarity);
 
 const monster = await prisma.monster.create({
