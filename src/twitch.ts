@@ -554,22 +554,22 @@ const SPHERES = {
     pal: {
         displayName: "Pal Sphere",
         catchChance: 0.30,
-        price: 10
+        price: 20
     },
     mega: {
         displayName: "Mega Sphere",
         catchChance: 0.50,
-        price: 20
+        price: 35
     },
     giga: {
         displayName: "Giga Sphere",
         catchChance: 0.60,
-        price: 30
+        price: 55
     },
     hyper: {
         displayName: "Hyper Sphere",
         catchChance: 0.70,
-        price: 50
+        price: 85
     }
 } as const;
 
@@ -1203,13 +1203,13 @@ if (command.startsWith("!link ")) {
 
     if (command === "!help 2") {
         await client.say(
-            currentChannel,
-            "📖 Shop & Catching | " +
-            "Pal Sphere: 30% - 10 coins | " +
-            "Mega Sphere: 50% - 20 coins | " +
-            "Giga Sphere: 60% - 30 coins | " +
-            "Hyper Sphere: 70% - 50 coins | " +
-            "Buy with !buy <pal|mega|giga|hyper> <amount>"
+    currentChannel,
+    	"📖 Shop & Catching | " +
+    	"Pal Sphere: 30% - 20 coins | " +
+    	"Mega Sphere: 50% - 35 coins | " +
+    	"Giga Sphere: 60% - 55 coins | " +
+    	"Hyper Sphere: 70% - 85 coins | " +
+    	"Buy with !buy <pal|mega|giga|hyper> <amount>"
         );
         return;
     }
@@ -1938,14 +1938,14 @@ if (command === "!dex" || command === "!paldex") {
 
     if (command === "!shop") {
         await client.say(
-            currentChannel,
-            "🛒 Sphere Shop | " +
-            "Pal Sphere: 10 coins (30%) | " +
-            "Mega Sphere: 20 coins (50%) | " +
-            "Giga Sphere: 30 coins (60%) | " +
-            "Hyper Sphere: 50 coins (70%). " +
-            "Buy with !buy <pal|mega|giga|hyper> <amount>"
-        );
+    	currentChannel,
+    	"🛒 Sphere Shop | " +
+    	"Pal Sphere: 20 coins (30%) | " +
+    	"Mega Sphere: 35 coins (50%) | " +
+    	"Giga Sphere: 55 coins (60%) | " +
+    	"Hyper Sphere: 85 coins (70%). " +
+    	"Buy with !buy <pal|mega|giga|hyper> <amount>"
+	);
         return;
     }
 
