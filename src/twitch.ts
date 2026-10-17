@@ -3259,15 +3259,27 @@ const monster = await prisma.monster.create({
 
     const client = connectedChannels.get(normalizedChannel);
 
-    if (client) {
-        const luckyText = monster.shiny ? " ✨LUCKY✨" : "";
 
-        await client.say(
-            normalizedChannel,
-            `🐾 A wild${luckyText} ${monster.species.trim()} appeared! ` +
-            `Use !catch, !catch mega, !catch giga, or !catch hyper within 90 seconds!`
-        );
-    }
+if (client) {
+    const luckyText = monster.shiny ? " ✨LUCKY✨" : "";
+    const isHalloweenSpawn =
+    isHalloweenEventActive() &&
+    isHalloweenPal({
+        ...monster,
+        paldeck: monster.paldeck ?? "",
+        type1: monster.type1 ?? "",
+        type2: monster.type2 ?? ""
+    });
+
+    const spawnMessage = isHalloweenSpawn
+        ? `🎃 HALLOWEEN EVENT! A spooky ${monster.species.trim()} has appeared! 👻 ` +
+          `Use !catch, !catch mega, !catch giga, or !catch hyper within 90 seconds!`
+        : `🐾 A wild${luckyText} ${monster.species.trim()} appeared! ` +
+          `Use !catch, !catch mega, !catch giga, or !catch hyper within 90 seconds!`;
+
+    await client.say(normalizedChannel, spawnMessage);
+}
+
 
     const despawnTimer = setTimeout(async () => {
         try {
