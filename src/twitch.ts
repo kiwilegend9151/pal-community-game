@@ -1038,9 +1038,7 @@ console.log("[CHAT]", {
     return;
   }
 
-const messageId =
-  tags.id ??
-  (tags as Record<string, string | undefined>)["source-id"];
+const messageId = tags.id;
 
   if (messageId) {
     const now = Date.now();
