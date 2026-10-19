@@ -33,6 +33,7 @@ export async function startDiscordBot(): Promise<void> {
   });
 
 
+
 const commands = [
   new SlashCommandBuilder()
     .setName("ping")
@@ -43,7 +44,11 @@ const commands = [
   new SlashCommandBuilder()
     .setName("daily")
     .setDescription("Claim your daily Pal Community Game reward."),
+  new SlashCommandBuilder()
+    .setName("help")
+    .setDescription("Show Pal Community Game Discord commands."),
 ].map((command) => command.toJSON());
+
 
 
   const rest = new REST({ version: "10" }).setToken(token);
@@ -54,6 +59,21 @@ const commands = [
 
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
+
+
+if (interaction.commandName === "help") {
+  await interaction.reply({
+    content:
+      "🎮 **Pal Community Game — Discord Commands**\n\n" +
+      "🎁 `/daily` — Claim your daily reward in the designated daily channel.\n" +
+      "🔗 `/link` — Link your Discord account to your Twitch player.\n" +
+      "🏓 `/ping` — Check whether the bot is online.\n\n" +
+      "Make sure you link your Twitch account before claiming Discord rewards!",
+    ephemeral: true,
+  });
+  return;
+}
+
 
     if (interaction.commandName === "ping") {
       await interaction.reply({
