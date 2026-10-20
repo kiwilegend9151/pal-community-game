@@ -39,6 +39,20 @@ const HALLOWEEN_PALS = [
     "Fortune Bringer Lyleen"
 ];
 
+export function getActiveMonsterForStreamer(channelName: string) {
+    const normalizedChannel = normalizeChannel(channelName);
+    const monster = activeMonsters.get(normalizedChannel);
+
+    if (!monster) {
+        return null;
+    }
+
+    return {
+        id: monster.id,
+        species: monster.species
+    };
+}
+
 const HALLOWEEN_REWARD_SPECIES = "Desert King Anubis";
 
 
