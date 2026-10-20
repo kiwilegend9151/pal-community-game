@@ -1038,29 +1038,35 @@ console.log("[CHAT]", {
     return;
   }
 
-const messageId = tags.id;
 
-  if (messageId) {
+const messageTags = tags as Record<string, string | undefined>;
+
+const messageId =
+    messageTags["source-id"] ??
+    tags.id;
+
+if (messageId) {
     const now = Date.now();
 
     if (recentMessageIds.has(messageId)) {
-      console.log("[DUPLICATE MESSAGE IGNORED]", {
-        id: messageId,
-        channel,
-        message
-      });
+        console.log("[DUPLICATE MESSAGE IGNORED]", {
+            id: messageId,
+            channel,
+            message
+        });
 
-      return;
+        return;
     }
 
     recentMessageIds.set(messageId, now);
 
     for (const [id, timestamp] of recentMessageIds) {
-      if (now - timestamp > 60_000) {
-        recentMessageIds.delete(id);
-      }
+        if (now - timestamp > 60_000) {
+            recentMessageIds.delete(id);
+        }
     }
-  }
+}
+
 
   const command = message.trim().toLowerCase();
   const currentChannel = normalizeChannel(channel);
@@ -2528,7 +2534,12 @@ if (command === "!daily") {
                 `1-hour expedition! Use !expedition status to check its progress.`
             );
         } catch (error) {
-            console.error("Expedition send command failed:", error);
+            console.error(
+    "Expedition send command failed:",
+    error instanceof Error
+        ? { message: error.message, stack: error.stack }
+        : error
+);
 
             await client.say(
                 currentChannel,
