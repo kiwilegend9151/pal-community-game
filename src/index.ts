@@ -1,3 +1,4 @@
+
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -12,6 +13,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { startDiscordBot } from "./discord";
 import twitchAuthRoutes from "./routes/twitchAuth";
+import { getActiveMonsterForStreamer } from "./twitch";
 
 const shopLimiter = rateLimit({
     windowMs: 60 * 1000,
@@ -59,7 +61,6 @@ app.use(
 );
 
 const extensionPath = path.join(process.cwd(), "extension", "dist");
-
 const publicPath = path.join(process.cwd(), "public");
 
 app.use(express.static(publicPath));
@@ -81,18 +82,21 @@ const allowedOrigins = [
 const allowedOriginRegex = /^https:\/\/[a-z0-9-]+\.ext-twitch\.tv$/i;
 
 const corsOptions = {
-    origin: (origin: string | undefined, callback: (error: Error | null, allowed?: boolean) => void) => {
-        // Allow requests with no Origin header, such as server-to-server requests.
+    origin: (
+        origin: string | undefined,
+        callback: (error: Error | null, allowed?: boolean) => void
+    ) => {
         if (!origin) {
             return callback(null, true);
         }
 
-	if (
-   	    allowedOrigins.includes(origin) ||
-    	    allowedOriginRegex.test(origin)
-	) {
-   	    return callback(null, true);
-	}
+        if (
+            allowedOrigins.includes(origin) ||
+            allowedOriginRegex.test(origin)
+        ) {
+            return callback(null, true);
+        }
+
         return callback(new Error("Origin not allowed by CORS"));
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -114,24 +118,59 @@ const generalLimiter = rateLimit({
 });
 
 app.use(generalLimiter);
-
 app.use(express.json());
 
 app.use("/auth/twitch", twitchAuthRoutes);
 
-app.use(
-    "/extension-assets",
-    express.static(extensionPath)
-);
-
-app.use(
-    "/extension-assets-v2",
-    express.static(extensionPath)
-);
+app.use("/extension-assets", express.static(extensionPath));
+app.use("/extension-assets-v2", express.static(extensionPath));
 
 app.use("/game", gameRoutes);
-
 app.use("/extension", extensionRoutes);
+
+// Shared schedule endpoint for every streamer's OBS overlay.
+app.get("/overlay/api/schedule", (_req, res) => {
+    const now = new Date();
+    const nextSpawnAt = new Date(now);
+
+    nextSpawnAt.setSeconds(0, 0);
+    nextSpawnAt.setMinutes(
+        Math.floor(now.getMinutes() / 20) * 20 + 20
+    );
+
+    return res.json({
+        nextSpawnAt: nextSpawnAt.toISOString(),
+        intervalMinutes: 20
+    });
+});
+
+// Channel-specific endpoint retained for active Pal information.
+app.get("/overlay/api/:channel", (req, res) => {
+    const channel = String(req.params.channel ?? "")
+        .trim()
+        .replace(/^#/, "")
+        .toLowerCase();
+
+    if (!/^[a-z0-9_]{1,25}$/.test(channel)) {
+        return res.status(400).json({
+            error: "Invalid Twitch channel name"
+        });
+    }
+
+    const now = new Date();
+    const nextSpawnAt = new Date(now);
+
+    nextSpawnAt.setSeconds(0, 0);
+    nextSpawnAt.setMinutes(
+        Math.floor(now.getMinutes() / 20) * 20 + 20
+    );
+
+    return res.json({
+        channel,
+        activeMonster: getActiveMonsterForStreamer(channel),
+        nextSpawnAt: nextSpawnAt.toISOString()
+    });
+});
 
 app.get("/", (_req, res) => {
     res.json({
@@ -158,7 +197,6 @@ io.on("connection", (socket) => {
         console.log(`Player disconnected: ${socket.id}`);
     });
 });
-
 
 const PORT = Number(process.env.PORT) || 3000;
 
