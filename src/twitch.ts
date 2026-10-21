@@ -1094,6 +1094,75 @@ if (messageId) {
         "A viewer";
 
 
+if (command === "!pallive") {
+    try {
+        const registeredStreamers = await prisma.streamer.findMany({
+            where: {
+                botEnabled: true
+            },
+            select: {
+                channelName: true
+            },
+            orderBy: {
+                channelName: "asc"
+            }
+        });
+
+        const connectedStreamers = registeredStreamers.filter(
+            (streamer) =>
+                connectedChannels.has(normalizeChannel(streamer.channelName))
+        );
+
+        const liveResults = await Promise.all(
+            connectedStreamers.map(async (streamer) => ({
+                channelName: normalizeChannel(streamer.channelName),
+                isLive: await isStreamerLive(
+                    normalizeChannel(streamer.channelName)
+                )
+            }))
+        );
+
+        const liveStreamers = liveResults
+            .filter((streamer) => streamer.isLive)
+            .map((streamer) => streamer.channelName);
+
+        const totalLive = liveStreamers.length;
+
+        if (totalLive === 0) {
+            await client.say(
+                currentChannel,
+                "🐾 No Pal Community Game streamers are live right now!"
+            );
+            return;
+        }
+
+        const displayedStreamers = liveStreamers.slice(0, 10);
+        const streamerList = displayedStreamers
+            .map((name, index) => `${index + 1}. ${name}`)
+            .join(" | ");
+
+        const remainingText =
+            totalLive > 10
+                ? ` | Showing 10 of ${totalLive}.`
+                : "";
+
+        await client.say(
+            currentChannel,
+            `🟢 ${totalLive} Pal Community Game streamer${totalLive === 1 ? " is" : "s are"} live! ${streamerList}${remainingText}`
+        );
+    } catch (error) {
+        console.error("Error handling !pallive:", error);
+        await client.say(
+            currentChannel,
+            "⚠️ Couldn't check live streamers right now. Please try again shortly."
+        );
+    }
+
+    return;
+}
+
+
+
 if (command.startsWith("!link ")) {
     const suppliedCode = message.trim().split(/\s+/)[1];
 
