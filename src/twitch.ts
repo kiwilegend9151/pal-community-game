@@ -1094,6 +1094,70 @@ if (messageId) {
         "A viewer";
 
 
+    if (command === "!palrank") {
+        try {
+            const player = await prisma.player.findUnique({
+                where: { twitchId: viewerTwitchId },
+                select: {
+                    id: true,
+                    username: true,
+                    _count: {
+                        select: {
+                            monsters: true
+                        }
+                    }
+                }
+            });
+
+            if (!player) {
+                await client.say(
+                    currentChannel,
+                    `🏆 ${viewerName}, use !start first to create your player profile!`
+                );
+                return;
+            }
+
+            const playerCount = await prisma.player.count();
+
+            const allPlayers = await prisma.player.findMany({
+                select: {
+                    id: true,
+                    _count: {
+                        select: {
+                            monsters: true
+                        }
+                    }
+                }
+            });
+
+            const catches = player._count.monsters;
+
+            const playersAhead = allPlayers.filter(
+                (entry) => entry._count.monsters > catches
+            ).length;
+
+            const rank = playersAhead + 1;
+
+            await client.say(
+                currentChannel,
+                `🏆 ${player.username} has caught ${catches} ` +
+                `Pal${catches === 1 ? "" : "s"} and is ranked ` +
+                `#${rank} out of ${playerCount} players!`
+            );
+        } catch (error) {
+            console.error("!palrank command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, your Pal rank could not be loaded.`
+            );
+        }
+
+        return;
+    }
+
+
+
 if (command === "!pallive") {
     try {
         const registeredStreamers = await prisma.streamer.findMany({
