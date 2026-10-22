@@ -2949,6 +2949,72 @@ await client.say(
         return;
     }
 
+
+    if (command === "!palcheck") {
+        try {
+            const monster = activeMonsters.get(currentChannel);
+
+            if (!monster) {
+                await client.say(
+                    currentChannel,
+                    "❌ There is no Pal spawned right now!"
+                );
+                return;
+            }
+
+            const player = await prisma.player.findUnique({
+                where: {
+                    twitchId: viewerTwitchId
+                },
+                select: {
+                    username: true,
+                    paldexEntries: {
+                        select: {
+                            species: true
+                        }
+                    }
+                }
+            });
+
+            if (!player) {
+                await client.say(
+                    currentChannel,
+                    `👤 ${viewerName}, you don't have a profile yet. Use !start first!`
+                );
+                return;
+            }
+
+            const hasDiscoveredPal = player.paldexEntries.some(
+                (entry) =>
+                    entry.species.trim().toLowerCase() ===
+                    monster.species.trim().toLowerCase()
+            );
+
+            if (hasDiscoveredPal) {
+                await client.say(
+                    currentChannel,
+                    `✅ ${viewerName}, you've already discovered ${monster.species} in your Paldeck!`
+                );
+            } else {
+                await client.say(
+                    currentChannel,
+                    `📖 ${viewerName}, you haven't discovered ${monster.species} in your Paldeck yet!`
+                );
+            }
+        } catch (error) {
+            console.error("!palcheck command failed:", error);
+
+            await client.say(
+                currentChannel,
+                `❌ Sorry ${viewerName}, I couldn't check your Paldeck right now.`
+            );
+        }
+
+        return;
+    }
+
+
+
     const catchParts = command.split(/\s+/);
 
     if (catchParts[0] !== "!catch") {
