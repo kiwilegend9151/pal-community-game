@@ -26,6 +26,34 @@ type ShopPurchaseResponse = {
   hyperSpheres: number;
 };
 
+export type DailyQuest = {
+  id: string;
+  title: string;
+  progress: number;
+  target: number;
+  rewardType: string;
+  rewardAmount: number;
+  completed: boolean;
+  claimed: boolean;
+  questDate: string;
+};
+
+export type DailyQuestsResponse = {
+  quests: DailyQuest[];
+};
+
+export type ClaimQuestsResponse = {
+  claimedCount: number;
+  coins: number;
+  gigaSpheres: number;
+  hyperSpheres: number;
+  player: {
+    coins: number;
+    gigaSpheres: number;
+    hyperSpheres: number;
+  };
+};
+
 async function readError(response: Response): Promise<string> {
   const payload = (await response.json().catch(() => null)) as
     | ErrorPayload
@@ -103,7 +131,13 @@ export const extensionApi = {
   claimExpedition: () =>
     post<ExpeditionClaimResponse>(
       "/extension/expedition/claim"
-    )
+    ),
+
+  getQuests: () =>
+    request<DailyQuestsResponse>("/extension/quests"),
+
+  claimQuestRewards: () =>
+    post<ClaimQuestsResponse>("/extension/quests/claim")
 };
 
 export type ExpeditionStatusResponse =

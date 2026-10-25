@@ -7,7 +7,10 @@ import jwt from "jsonwebtoken";
 import { Prisma } from "@prisma/client";
 import axios from "axios";
 import { prisma } from "../database";
-import { connectStreamer } from "../twitch";
+import {
+    connectStreamer,
+    getOrCreateDailyQuests
+} from "../twitch";
 import { monsterTemplates } from "../monsters";
 import {
     shopLimiter,
@@ -878,6 +881,176 @@ return res.json({
             return res.status(500).json({
                 error: "Could not load Paldeck"
             });
+        }
+    }
+);
+
+/*
+ * Daily Quests
+ * GET /extension/quests
+ */
+router.get(
+    "/quests",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                select: { id: true }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player profile not found"
+                });
+            }
+
+            const now = new Date();
+            const questDate = new Date(
+                Date.UTC(
+                    now.getUTCFullYear(),
+                    now.getUTCMonth(),
+                    now.getUTCDate()
+                )
+            );
+
+            const quests = await getOrCreateDailyQuests(player.id);
+
+            return res.json({
+                quests: quests.map((quest) => ({
+                    id: quest.id,
+                    title: quest.title,
+                    progress: Math.min(quest.progress, quest.target),
+                    target: quest.target,
+                    rewardType: quest.rewardType,
+                    rewardAmount: quest.rewardAmount,
+                    completed: quest.completed,
+                    claimed: quest.claimed,
+                    questDate
+                }))
+            });
+        } catch (error) {
+            console.error("Could not load daily quests:", error);
+
+            return res.status(500).json({
+                error: "Could not load daily quests"
+            });
+        }
+    }
+);
+
+/*
+ * Claim completed daily quest rewards
+ * POST /extension/quests/claim
+ */
+router.post(
+    "/quests/claim",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const result = await prisma.$transaction(async (tx) => {
+                const player = await tx.player.findUnique({
+                    where: { twitchId },
+                    select: { id: true }
+                });
+
+                if (!player) {
+                    throw new Error("Player profile not found");
+                }
+
+                const now = new Date();
+                const questDate = new Date(
+                    Date.UTC(
+                        now.getUTCFullYear(),
+                        now.getUTCMonth(),
+                        now.getUTCDate()
+                    )
+                );
+
+                // Ensure today's quests exist before reading them.
+                const quests = await getOrCreateDailyQuests(player.id);
+
+                const claimable = quests.filter(
+                    (quest) =>
+                        quest.completed &&
+                        !quest.claimed &&
+                        quest.questDate.getTime() === questDate.getTime()
+                );
+
+                if (claimable.length === 0) {
+                    throw new Error("No completed quest rewards to claim");
+                }
+
+                let coins = 0;
+                let gigaSpheres = 0;
+                let hyperSpheres = 0;
+
+                for (const quest of claimable) {
+                    if (quest.rewardType === "coins") {
+                        coins += quest.rewardAmount;
+                    } else if (quest.rewardType === "giga") {
+                        gigaSpheres += quest.rewardAmount;
+                    } else if (quest.rewardType === "hyper") {
+                        hyperSpheres += quest.rewardAmount;
+                    } else if (quest.rewardType === "lucky") {
+                        coins += 100;
+                        hyperSpheres += 5;
+                    }
+                }
+
+                // Only claim quests that are still completed and unclaimed.
+                const claimed = await tx.dailyQuest.updateMany({
+                    where: {
+                        id: { in: claimable.map((quest) => quest.id) },
+                        playerId: player.id,
+                        questDate,
+                        completed: true,
+                        claimed: false
+                    },
+                    data: { claimed: true }
+                });
+
+                if (claimed.count !== claimable.length) {
+                    throw new Error(
+                        "Some quest rewards were already claimed. Refresh and try again."
+                    );
+                }
+
+                const updatedPlayer = await tx.player.update({
+                    where: { id: player.id },
+                    data: {
+                        coins: { increment: coins },
+                        gigaSpheres: { increment: gigaSpheres },
+                        hyperSpheres: { increment: hyperSpheres }
+                    },
+                    select: {
+                        coins: true,
+                        gigaSpheres: true,
+                        hyperSpheres: true
+                    }
+                });
+
+                return {
+                    claimedCount: claimable.length,
+                    coins,
+                    gigaSpheres,
+                    hyperSpheres,
+                    player: updatedPlayer
+                };
+            });
+
+            return res.json(result);
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Could not claim quest rewards";
+
+            return res.status(400).json({ error: message });
         }
     }
 );

@@ -4,7 +4,8 @@ export type TabId =
   | "inventory"
   | "shop"
   | "expedition"
-  | "paldex";
+  | "paldex"
+  | "quests";
 
 export interface Pal {
   id: string;

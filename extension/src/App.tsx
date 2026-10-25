@@ -4,6 +4,7 @@ import { PalCard } from "./components/PalCard";
 import { PalModal } from "./components/PalModal";
 import {
   extensionApi,
+  type DailyQuest,
   type ExpeditionStatusResponse
 } from "./lib/api";
 import {
@@ -25,6 +26,9 @@ export default function App() {
   const [profile, setProfile] = useState<PlayerSummary | null>(null);
   const [pals, setPals] = useState<Pal[]>([]);
   const [paldex, setPaldex] = useState<PaldeckSummary | null>(null);
+  const [quests, setQuests] = useState<DailyQuest[]>([]);
+  const [questsMessage, setQuestsMessage] = useState("");
+  const [questsBusy, setQuestsBusy] = useState(false);
   const [selectedPal, setSelectedPal] = useState<Pal | null>(null);
   const [query, setQuery] = useState("");
   const [luckyOnly, setLuckyOnly] = useState(false);
@@ -73,18 +77,25 @@ console.log("[APP] isConfigPage:", isConfigPage);
     setError("");
 
     try {
-const [profileData, palsData, paldexData, expeditionData] =
-  await Promise.all([
-    extensionApi.getProfile(),
-    extensionApi.getPals(),
-    extensionApi.getPaldex(),
-    extensionApi.getExpedition()
-  ]);
+const [
+  profileData,
+  palsData,
+  paldexData,
+  expeditionData,
+  questsData
+] = await Promise.all([
+  extensionApi.getProfile(),
+  extensionApi.getPals(),
+  extensionApi.getPaldex(),
+  extensionApi.getExpedition(),
+  extensionApi.getQuests()
+]);
 
       setProfile(profileData);
       setPals(palsData.pals);
       setPaldex(paldexData);
       setExpedition(expeditionData);
+      setQuests(questsData.quests);
       setState("ready");
     } catch (loadError) {
       const message =
@@ -180,6 +191,32 @@ const claimExpedition = useCallback(async () => {
     );
   } finally {
     setExpeditionBusy(false);
+  }
+}, [loadData]);
+
+const claimQuestRewards = useCallback(async () => {
+  setQuestsBusy(true);
+  setQuestsMessage("");
+
+  try {
+    const result = await extensionApi.claimQuestRewards();
+
+    setQuestsMessage(
+      `Claimed ${result.claimedCount} quest(s)! ` +
+      `Received ${result.coins} coins, ` +
+      `${result.gigaSpheres} Giga Spheres and ` +
+      `${result.hyperSpheres} Hyper Spheres.`
+    );
+
+    await loadData();
+  } catch (claimError) {
+    setQuestsMessage(
+      claimError instanceof Error
+        ? claimError.message
+        : "Could not claim quest rewards."
+    );
+  } finally {
+    setQuestsBusy(false);
   }
 }, [loadData]);
 
@@ -759,6 +796,83 @@ console.log("[APP] activeTab:", activeTab);
 
           </>
         )}
+
+{activeTab === "quests" && (
+  <>
+    <h1>Daily Quests</h1>
+    <p>Complete quests to earn rewards. Your quests reset daily.</p>
+
+    <div className="summary-grid">
+      <article>
+        <span>Completed</span>
+        <strong>
+          {quests.filter((quest) => quest.completed).length} / {quests.length}
+        </strong>
+      </article>
+
+      <article>
+        <span>Claimable</span>
+        <strong>
+          {quests.filter((quest) => quest.completed && !quest.claimed).length}
+        </strong>
+      </article>
+    </div>
+
+    <div className="inventory-list">
+      {quests.map((quest) => {
+        const progress = Math.min(quest.progress, quest.target);
+        const reward =
+          quest.rewardType === "lucky"
+            ? "100 Coins + 5 Hyper Spheres"
+            : `${quest.rewardAmount} ${
+                quest.rewardType === "coins"
+                  ? "Coins"
+                  : quest.rewardType === "giga"
+                    ? "Giga Spheres"
+                    : quest.rewardType === "hyper"
+                      ? "Hyper Spheres"
+                      : quest.rewardType
+              }`;
+
+        return (
+          <article key={quest.id} className="inventory-item">
+            <div>
+              <strong>{quest.title}</strong>
+              <p>
+                Progress: {progress} / {quest.target}
+              </p>
+
+              <progress
+                value={progress}
+                max={Math.max(quest.target, 1)}
+              />
+
+              <p>Reward: {reward}</p>
+
+              {quest.claimed && <span>Reward claimed</span>}
+              {!quest.claimed && quest.completed && (
+                <span>Completed — ready to claim!</span>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+
+    <button
+      className="primary-button"
+      disabled={
+        questsBusy ||
+        !quests.some((quest) => quest.completed && !quest.claimed)
+      }
+      onClick={() => void claimQuestRewards()}
+    >
+      {questsBusy ? "Claiming..." : "Claim Quest Rewards"}
+    </button>
+
+    {questsMessage && <p>{questsMessage}</p>}
+  </>
+)}
 
       </section>
 

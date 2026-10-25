@@ -16,6 +16,7 @@ const items: Array<{
   { id: "inventory", image: "./bag.webp", label: "Inventory" },
   { id: "shop", image: "./shop.webp", label: "Shop" },
   { id: "expedition", image: "./expedition.webp", label: "Expedition" },
+  { id: "quests", label: "Quests" },
   { id: "paldex", image: "./paldeck.webp", label: "Paldeck" }
 ];
 

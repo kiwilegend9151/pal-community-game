@@ -385,7 +385,7 @@ function getDailyQuestDate(): Date {
   );
 }
 
-async function getOrCreateDailyQuests(playerId: string) {
+export async function getOrCreateDailyQuests(playerId: string) {
   const questDate = getDailyQuestDate();
 
   const existingQuests = await prisma.dailyQuest.findMany({
