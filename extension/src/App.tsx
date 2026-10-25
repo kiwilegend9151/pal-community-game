@@ -375,25 +375,25 @@ console.log("[APP] activeTab:", activeTab);
   {
     id: "pal",
     name: "Pal Sphere",
-    price: 10,
+    price: 20,
     image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
   },
   {
     id: "mega",
     name: "Mega Sphere",
-    price: 20,
+    price: 35,
     image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
   },
   {
     id: "giga",
     name: "Giga Sphere",
-    price: 30,
+    price: 55,
     image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
   },
   {
     id: "hyper",
     name: "Hyper Sphere",
-    price: 50,
+    price: 85,
     image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
   }
 ].map((item) => (

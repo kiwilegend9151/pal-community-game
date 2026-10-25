@@ -354,10 +354,10 @@ router.post(
             const quantity = body.quantity ?? 1;
 
             const prices = {
-                pal: 10,
-                mega: 20,
-                giga: 30,
-                hyper: 50
+    	    pal: 20,
+    	    mega: 35,
+            giga: 55,
+            hyper: 85
             } as const;
 
             const sphereFields = {
