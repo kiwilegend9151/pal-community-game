@@ -23,6 +23,7 @@ type InstallState = "installing" | "success" | "error";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("pals");
+  const [inventorySection, setInventorySection] = useState<"items" | "shop">("items");
   const [profile, setProfile] = useState<PlayerSummary | null>(null);
   const [pals, setPals] = useState<Pal[]>([]);
   const [paldex, setPaldex] = useState<PaldeckSummary | null>(null);
@@ -403,102 +404,6 @@ console.log("[APP] activeTab:", activeTab);
           </>
         )}
 
-{activeTab === "shop" && (
-  <>
-    <h1>Shop</h1>
-
-    <div className="inventory-list">
-{[
-  {
-    id: "pal",
-    name: "Pal Sphere",
-    price: 20,
-    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
-  },
-  {
-    id: "mega",
-    name: "Mega Sphere",
-    price: 35,
-    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
-  },
-  {
-    id: "giga",
-    name: "Giga Sphere",
-    price: 55,
-    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
-  },
-  {
-    id: "hyper",
-    name: "Hyper Sphere",
-    price: 85,
-    image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
-  }
-].map((item) => (
-        <article key={item.id} className="shop-item">
-         <div className="shop-item-info">
-  <img
-    src={item.image}
-    alt=""
-    className="shop-item-image"
-  />
-  <div>
-    <span>{item.name}</span>
-    <strong>{item.price} Coins each</strong>
-  </div>
-</div>
-
-          <div className="shop-controls">
-            <input
-              type="number"
-              min="1"
-              value={shopQuantities[item.id as keyof typeof shopQuantities]}
-              onChange={(event) => {
-                const value = Math.max(
-                  1,
-                  Number(event.target.value) || 1
-                );
-
-                setShopQuantities((current) => ({
-                  ...current,
-                  [item.id]: value
-                }));
-              }}
-            />
-
-            <button
-              className="primary-button"
-              onClick={async () => {
-                try {
-                  const quantity =
-                    shopQuantities[
-                      item.id as keyof typeof shopQuantities
-                    ];
-
-                  await extensionApi.buySphere(
-                    item.id as "pal" | "mega" | "giga" | "hyper",
-                    quantity
-                  );
-
-                  await loadData();
-                } catch (shopError) {
-                  setError(
-                    shopError instanceof Error
-                      ? shopError.message
-                      : `Unable to buy ${item.name}`
-                  );
-                }
-              }}
-            >
-              Buy
-            </button>
-          </div>
-        </article>
-      ))}
-    </div>
-
-    {error && <p className="error-text">{error}</p>}
-  </>
-)}
         {activeTab === "profile" && (
           <>
             <h1>{profile.username}</h1>
@@ -519,7 +424,26 @@ console.log("[APP] activeTab:", activeTab);
   <>
     <h1>Inventory</h1>
 
-    <div className="inventory-list">
+    <div className="inventory-submenu">
+      <button
+        type="button"
+        className={inventorySection === "items" ? "nav-button active" : "nav-button"}
+        onClick={() => setInventorySection("items")}
+      >
+        Items
+      </button>
+
+      <button
+        type="button"
+        className={inventorySection === "shop" ? "nav-button active" : "nav-button"}
+        onClick={() => setInventorySection("shop")}
+      >
+        Shop
+      </button>
+    </div>
+
+    {inventorySection === "items" && (
+      <div className="inventory-list">
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
@@ -615,7 +539,103 @@ console.log("[APP] activeTab:", activeTab);
         </div>
         <strong>{profile.stone}</strong>
       </article>
+      </div>
+    )}
+
+
+{inventorySection === "shop" && (
+  <>
+    <h2>Shop</h2>
+    <div className="inventory-list">
+      {[
+        {
+          id: "pal",
+          name: "Pal Sphere",
+          price: 20,
+          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
+        },
+        {
+          id: "mega",
+          name: "Mega Sphere",
+          price: 35,
+          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
+        },
+        {
+          id: "giga",
+          name: "Giga Sphere",
+          price: 55,
+          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
+        },
+        {
+          id: "hyper",
+          name: "Hyper Sphere",
+          price: 85,
+          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
+        }
+      ].map((item) => (
+        <article key={item.id} className="shop-item">
+          <div className="shop-item-info">
+            <img
+              src={item.image}
+              alt={item.name}
+              className="shop-item-image"
+            />
+            <div>
+              <span>{item.name}</span>
+              <strong>{item.price} Coins each</strong>
+            </div>
+          </div>
+
+          <div className="shop-controls">
+            <input
+              type="number"
+              min="1"
+              value={shopQuantities[item.id as keyof typeof shopQuantities]}
+              onChange={(event) => {
+                const value = Math.max(
+                  1,
+                  Number(event.target.value) || 1
+                );
+                setShopQuantities((current) => ({
+                  ...current,
+                  [item.id]: value
+                }));
+              }}
+            />
+
+            <button
+              className="primary-button"
+              onClick={async () => {
+                try {
+                  const quantity =
+                    shopQuantities[item.id as keyof typeof shopQuantities];
+
+                  await extensionApi.buySphere(
+                    item.id as "pal" | "mega" | "giga" | "hyper",
+                    quantity
+                  );
+
+                  await loadData();
+                } catch (shopError) {
+                  setError(
+                    shopError instanceof Error
+                      ? shopError.message
+                      : `Unable to buy ${item.name}`
+                  );
+                }
+              }}
+            >
+              Buy
+            </button>
+          </div>
+        </article>
+      ))}
     </div>
+
+    {error && <p className="error-text">{error}</p>}
+  </>
+)}
+
   </>
 )}
 
