@@ -723,6 +723,7 @@ router.get(
                         select: {
                             id: true,
                             species: true,
+                            nickname: true,
                             paldeck: true,
                             type1: true,
                             type2: true,
@@ -758,6 +759,79 @@ router.get(
 
             return res.status(500).json({
                 error: "Could not load Pal collection"
+            });
+        }
+    }
+);
+
+
+/*
+ * Update a Pal nickname
+ * PATCH /extension/pals/:palId/nickname
+ */
+router.patch(
+    "/pals/:palId/nickname",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+            const palId = Array.isArray(req.params.palId)
+    ? req.params.palId[0]
+    : req.params.palId;
+
+            const body = req.body as {
+                nickname?: unknown;
+            };
+
+            const nickname =
+                typeof body.nickname === "string"
+                    ? body.nickname.trim()
+                    : "";
+
+            if (nickname.length > 20) {
+                return res.status(400).json({
+                    error: "Nicknames cannot exceed 20 characters"
+                });
+            }
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                select: { id: true }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            const updated = await prisma.monster.updateMany({
+                where: {
+                    id: palId,
+                    ownerId: player.id
+                },
+                data: {
+                    nickname: nickname || null
+                }
+            });
+
+            if (updated.count !== 1) {
+                return res.status(404).json({
+                    error: "Pal not found in your collection"
+                });
+            }
+
+            return res.json({
+                message: nickname
+                    ? "Nickname updated successfully"
+                    : "Nickname removed successfully",
+                nickname: nickname || null
+            });
+        } catch (error) {
+            console.error("Could not update Pal nickname:", error);
+
+            return res.status(500).json({
+                error: "Could not update Pal nickname"
             });
         }
     }

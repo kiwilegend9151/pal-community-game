@@ -57,6 +57,7 @@ model PaldexEntry {
 model Monster {
   id      String  @id @default(uuid())
   species String
+  nickname String?
   paldeck String?
   type1   String?
   type2   String?

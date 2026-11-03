@@ -93,6 +93,23 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function patch<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getExtensionToken()}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const extensionApi = {
   install: () =>
     post<InstallResponse>("/extension/install"),
@@ -102,6 +119,12 @@ export const extensionApi = {
 
   getPals: () =>
     request<{ total: number; pals: Pal[] }>("/extension/pals"),
+
+renamePal: (palId: string, nickname: string) =>
+  patch<{ message: string; nickname: string | null }>(
+    `/extension/pals/${encodeURIComponent(palId)}/nickname`,
+    { nickname }
+  ),
 
   getPaldex: () =>
     request<PaldeckSummary>("/extension/paldex"),

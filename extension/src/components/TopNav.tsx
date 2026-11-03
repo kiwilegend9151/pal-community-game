@@ -14,9 +14,8 @@ const items: Array<{
   { id: "profile", image: "./profile.webp", label: "Profile" },
   { id: "pals", image: "./pals.webp", label: "Pals" },
   { id: "inventory", image: "./bag.webp", label: "Inventory" },
-  { id: "shop", image: "./shop.webp", label: "Shop" },
   { id: "expedition", image: "./expedition.webp", label: "Expedition" },
-  { id: "quests", label: "Quests" },
+  { id: "quests", image: "./quests.webp", label: "Quests" },
   { id: "paldex", image: "./paldeck.webp", label: "Paldeck" }
 ];
 

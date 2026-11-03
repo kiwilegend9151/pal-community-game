@@ -58,9 +58,9 @@ export function PalCard({ pal, selected, onSelect }: Props) {
       </span>
 
       <span className="pal-name">
-        {pal.shiny && <span className="lucky-star">★ </span>}
-        {pal.species.trim()}
-      </span>
+  {pal.shiny && <span className="lucky-star">★ </span>}
+  {pal.nickname?.trim() || pal.species.trim()}
+</span>
     </button>
   );
 }

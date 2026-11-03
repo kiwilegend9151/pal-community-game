@@ -1,15 +1,59 @@
+import { useEffect, useState } from "react";
 import type { Pal } from "../types";
+import { extensionApi } from "../lib/api";
 import { getPalImage } from "../utils/palImages";
 import { getTypeImage } from "../utils/typeImages";
 
 interface Props {
   pal: Pal | null;
   onClose: () => void;
+  onUpdated: (palId: string, nickname: string | null) => void;
 }
 
-export function PalModal({ pal, onClose }: Props) {
+export function PalModal({ pal, onClose, onUpdated }: Props) {
+  const [nickname, setNickname] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setNickname(pal?.nickname ?? "");
+    setError("");
+    setSaved(false);
+  }, [pal?.id, pal?.nickname]);
+
   if (!pal) return null;
-const imageUrl = getPalImage(pal.species);
+
+  const imageUrl = getPalImage(pal.species);
+
+  async function handleSave() {
+    if (!pal || saving) return;
+
+    setSaving(true);
+    setError("");
+    setSaved(false);
+
+    try {
+      const cleanedNickname = nickname.trim();
+
+      const result = await extensionApi.renamePal(
+        pal.id,
+        cleanedNickname
+      );
+
+      onUpdated(pal.id, result.nickname);
+      setNickname(result.nickname ?? "");
+      setSaved(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not save nickname"
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
@@ -28,48 +72,86 @@ const imageUrl = getPalImage(pal.species);
           ×
         </button>
 
-<div className="modal-art">
-  {imageUrl ? (
-    <img
-      src={imageUrl}
-      alt={pal.species.trim()}
-      className="modal-pal-image"
-    />
-  ) : (
-    <span>{pal.species.trim().slice(0, 2).toUpperCase()}</span>
-  )}
-</div>
+        <div className="modal-art">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={pal.species.trim()}
+              className="modal-pal-image"
+            />
+          ) : (
+            <span>
+              {pal.species.trim().slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        </div>
 
-        <h2>{pal.shiny && <span className="lucky-star">★ </span>}{pal.species}</h2>
+        <h2>
+          {pal.shiny && <span className="lucky-star">★ </span>}
+          {pal.nickname?.trim() || pal.species}
+        </h2>
+
         <p className="modal-level">Level {pal.level}</p>
 
-<div className="type-row">
-  {pal.type1 && (
-    <span className="type-badge">
-      {getTypeImage(pal.type1) && (
-        <img
-          src={getTypeImage(pal.type1)}
-          alt=""
-          className="type-icon"
-        />
-      )}
-      {pal.type1}
-    </span>
-  )}
+        <div className="type-row">
+          {pal.type1 && (
+            <span className="type-badge">
+              {getTypeImage(pal.type1) && (
+                <img
+                  src={getTypeImage(pal.type1)}
+                  alt=""
+                  className="type-icon"
+                />
+              )}
+              {pal.type1}
+            </span>
+          )}
 
-  {pal.type2 && (
-    <span className="type-badge">
-      {getTypeImage(pal.type2) && (
-        <img
-          src={getTypeImage(pal.type2)}
-          alt=""
-          className="type-icon"
-        />
-      )}
-      {pal.type2}
-    </span>
-  )}
-</div>
+          {pal.type2 && (
+            <span className="type-badge">
+              {getTypeImage(pal.type2) && (
+                <img
+                  src={getTypeImage(pal.type2)}
+                  alt=""
+                  className="type-icon"
+                />
+              )}
+              {pal.type2}
+            </span>
+          )}
+        </div>
+
+        <div className="nickname-editor">
+          <label htmlFor="pal-nickname">Pal nickname</label>
+
+          <input
+            id="pal-nickname"
+            type="text"
+            value={nickname}
+            onChange={(event) => {
+              setNickname(event.target.value);
+              setSaved(false);
+              setError("");
+            }}
+            placeholder={pal.species}
+            maxLength={20}
+          />
+
+          <p className="nickname-hint">
+            Original species: {pal.species}
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || nickname.trim() === (pal.nickname ?? "")}
+          >
+            {saving ? "Saving..." : "Save Nickname"}
+          </button>
+
+          {error && <p className="nickname-error">{error}</p>}
+          {saved && <p className="nickname-success">Nickname saved!</p>}
+        </div>
 
         <dl className="stats-grid">
           <div><dt>HP</dt><dd>{pal.hp}</dd></div>

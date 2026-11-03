@@ -17,6 +17,17 @@ import type { Pal, PaldeckSummary, PlayerSummary, TabId } from "./types";
 import "./styles.css";
 import { getPalImage } from "./utils/palImages";
 
+const inventoryImages = import.meta.glob(
+  "../public/inventory/*.webp",
+  {
+    eager: true,
+    query: "?url",
+    import: "default"
+  }
+) as Record<string, string>;
+
+const inventoryImage = (filename: string) =>
+  inventoryImages[`../public/inventory/${filename}`];
 
 type LoadState = "loading" | "ready" | "error" | "identity-required";
 type InstallState = "installing" | "success" | "error";
@@ -33,6 +44,8 @@ export default function App() {
   const [selectedPal, setSelectedPal] = useState<Pal | null>(null);
   const [query, setQuery] = useState("");
   const [luckyOnly, setLuckyOnly] = useState(false);
+  const [palSort, setPalSort] = useState<"latest" | "id" | "name" | "level">("latest");
+  const [palSortDirection, setPalSortDirection] = useState<"asc" | "desc">("asc");
   const [state, setState] = useState<LoadState>("loading");
   const [error, setError] = useState("");
   const [installState, setInstallState] =
@@ -237,14 +250,71 @@ initialiseTwitch(
 );
 }, []);
 
-  const filteredPals = useMemo(() => {
-    const value = query.trim().toLowerCase();
+const filteredPals = useMemo(() => {
+  const value = query.trim().toLowerCase();
 
-    return pals.filter((pal) => {
-      const matchesSearch = !value || pal.species.toLowerCase().includes(value);
-      return matchesSearch && (!luckyOnly || pal.shiny);
+  const filtered = pals.filter((pal) => {
+    const matchesSearch = !value || pal.species.toLowerCase().includes(value);
+    return matchesSearch && (!luckyOnly || pal.shiny);
+  });
+
+    return filtered.sort((a, b) => {
+    let result = 0;
+
+    switch (palSort) {
+      case "id": {
+  const getPaldeckNumber = (species: string) =>
+    paldex?.entries.find(
+      (entry) =>
+        entry.species.trim().toLowerCase() ===
+        species.trim().toLowerCase()
+    )?.paldeck ?? null;
+
+  const aNumber = getPaldeckNumber(a.species);
+  const bNumber = getPaldeckNumber(b.species);
+
+  if (aNumber === null && bNumber === null) result = 0;
+  else if (aNumber === null) result = 1;
+  else if (bNumber === null) result = -1;
+  else {
+    result = aNumber.localeCompare(bNumber, undefined, {
+      numeric: true,
+      sensitivity: "base"
     });
-  }, [luckyOnly, pals, query]);
+  }
+
+  break;
+}
+
+      case "name":
+        result = a.species.trim().localeCompare(
+          b.species.trim(),
+          undefined,
+          { sensitivity: "base" }
+        );
+        break;
+
+      case "level":
+        result = a.level - b.level;
+        break;
+
+      case "latest":
+      default:
+        result =
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime();
+        break;
+    }
+
+    return palSortDirection === "asc" ? result : -result;
+  });
+}, [luckyOnly, pals, paldex, palSort, palSortDirection, query]);
+
+console.log(
+  "[PAL SORT]",
+  palSort,
+  filteredPals.map((pal) => pal.species)
+);
 
 useEffect(() => {
   if (isConfigPage) {
@@ -391,6 +461,27 @@ console.log("[APP] activeTab:", activeTab);
               </label>
             </div>
 
+<select
+  value={palSort}
+  onChange={(event) =>
+    setPalSort(event.target.value as "latest" | "id" | "name" | "level")
+  }
+>
+  <option value="latest">Latest</option>
+  <option value="id">ID</option>
+  <option value="name">Name</option>
+  <option value="level">Level</option>
+</select>
+<select
+  value={palSortDirection}
+  onChange={(event) =>
+    setPalSortDirection(event.target.value as "asc" | "desc")
+  }
+>
+  <option value="asc">Ascending</option>
+  <option value="desc">Descending</option>
+</select>
+
             <div className="pal-grid">
               {filteredPals.map((pal) => (
                 <PalCard
@@ -447,7 +538,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/gold-coin.webp"
+            src={inventoryImage("gold-coin.webp")}
             alt="Coins"
             className="inventory-item-image"
           />
@@ -459,7 +550,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-           src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
+           src={inventoryImage("pal-sphere.webp")}
             alt="Pal Spheres"
             className="inventory-item-image"
           />
@@ -471,7 +562,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
+            src={inventoryImage("mega-sphere.webp")}
             alt="Mega Spheres"
             className="inventory-item-image"
           />
@@ -483,7 +574,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
+            src={inventoryImage("giga-sphere.webp")}
             alt="Giga Spheres"
             className="inventory-item-image"
           />
@@ -495,7 +586,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
+            src={inventoryImage("hyper-sphere.webp")}
             alt="Hyper Spheres"
             className="inventory-item-image"
           />
@@ -507,7 +598,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/paldium-fragment.webp"
+            src={inventoryImage("paldium-fragment.webp")}
             alt="Paldium"
             className="inventory-item-image"
           />
@@ -519,7 +610,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/wood.webp"
+            src={inventoryImage("wood.webp")}
             alt="Wood"
             className="inventory-item-image"
           />
@@ -531,7 +622,7 @@ console.log("[APP] activeTab:", activeTab);
       <article className="inventory-item">
         <div className="inventory-item-info">
           <img
-            src="https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/stone.webp"
+            src={inventoryImage("stone.webp")}
             alt="Stone"
             className="inventory-item-image"
           />
@@ -552,25 +643,25 @@ console.log("[APP] activeTab:", activeTab);
           id: "pal",
           name: "Pal Sphere",
           price: 20,
-          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/pal-sphere.webp"
+          image: inventoryImage("pal-sphere.webp")
         },
         {
           id: "mega",
           name: "Mega Sphere",
           price: 35,
-          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/mega-sphere.webp"
+          image: inventoryImage("mega-sphere.webp")
         },
         {
           id: "giga",
           name: "Giga Sphere",
           price: 55,
-          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/giga-sphere.webp"
+          image: inventoryImage("giga-sphere.webp")
         },
         {
           id: "hyper",
           name: "Hyper Sphere",
           price: 85,
-          image: "https://pal-community-game-production.up.railway.app/extension-assets-v2/inventory/hyper-sphere.webp"
+          image: inventoryImage("hyper-sphere.webp")
         }
       ].map((item) => (
         <article key={item.id} className="shop-item">
@@ -819,26 +910,9 @@ console.log("[APP] activeTab:", activeTab);
 
 {activeTab === "quests" && (
   <>
-    <h1>Daily Quests</h1>
-    <p>Complete quests to earn rewards. Your quests reset daily.</p>
+    <h1 className="quests-heading">Daily Quests</h1>
 
-    <div className="summary-grid">
-      <article>
-        <span>Completed</span>
-        <strong>
-          {quests.filter((quest) => quest.completed).length} / {quests.length}
-        </strong>
-      </article>
-
-      <article>
-        <span>Claimable</span>
-        <strong>
-          {quests.filter((quest) => quest.completed && !quest.claimed).length}
-        </strong>
-      </article>
-    </div>
-
-    <div className="inventory-list">
+    <div className="quest-list">
       {quests.map((quest) => {
         const progress = Math.min(quest.progress, quest.target);
         const reward =
@@ -855,7 +929,7 @@ console.log("[APP] activeTab:", activeTab);
               }`;
 
         return (
-          <article key={quest.id} className="inventory-item">
+          <article key={quest.id} className="quest-card">
             <div>
               <strong>{quest.title}</strong>
               <p>
@@ -896,10 +970,29 @@ console.log("[APP] activeTab:", activeTab);
 
       </section>
 
-      <PalModal
-        pal={selectedPal}
-        onClose={() => setSelectedPal(null)}
-      />
+<PalModal
+  pal={selectedPal}
+  onClose={() => setSelectedPal(null)}
+  onUpdated={(palId, nickname) => {
+    setPals((currentPals) =>
+      currentPals.map((pal) =>
+        pal.id === palId
+          ? { ...pal, nickname }
+          : pal
+      )
+    );
+
+    setSelectedPal((currentPal) =>
+      currentPal?.id === palId
+        ? { ...currentPal, nickname }
+        : currentPal
+    );
+  }}
+/>
     </main>
   );
 }
+
+
+
+

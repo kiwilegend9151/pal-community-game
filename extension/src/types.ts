@@ -10,6 +10,7 @@ export type TabId =
 export interface Pal {
   id: string;
   species: string;
+  nickname: string | null;
   level: number;
   shiny: boolean;
   type1: string | null;
