@@ -4,6 +4,7 @@ interface Props {
   pal: Pal;
   selected: boolean;
   onSelect: (pal: Pal) => void;
+  isPartner: boolean;
 }
 
 const palImages = import.meta.glob(
@@ -27,7 +28,7 @@ function getPalImage(species: string): string | undefined {
   return match?.[1];
 }
 
-export function PalCard({ pal, selected, onSelect }: Props) {
+export function PalCard({ pal, selected, onSelect, isPartner }: Props) {
   const initials = pal.species
     .trim()
     .split(/\s+/)
@@ -44,7 +45,11 @@ export function PalCard({ pal, selected, onSelect }: Props) {
       className={selected ? "pal-card selected" : "pal-card"}
       onClick={() => onSelect(pal)}
     >
-      <span className="level-badge">{pal.level}</span>
+     <span className="level-badge">{pal.level}</span>
+
+{isPartner && (
+  <span className="partner-badge">❤️ Partner</span>
+)}
 
       <span className="pal-art">
         {imageUrl ? (

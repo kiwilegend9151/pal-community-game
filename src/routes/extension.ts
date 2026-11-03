@@ -716,6 +716,7 @@ router.get(
                     twitchId
                 },
                 select: {
+                    partnerPalId: true,
                     monsters: {
                         orderBy: {
                             createdAt: "desc"
@@ -742,13 +743,13 @@ router.get(
 
             if (!player) {
                 return res.status(404).json({
-                    error:
-                        `No player was found with Twitch ID ${twitchId}`
+                    error: `No player was found with Twitch ID ${twitchId}`
                 });
             }
 
             return res.json({
                 total: player.monsters.length,
+                partnerPalId: player.partnerPalId,
                 pals: player.monsters.map((pal) => ({
                     ...pal,
                     imageUrl: null
@@ -832,6 +833,115 @@ router.patch(
 
             return res.status(500).json({
                 error: "Could not update Pal nickname"
+            });
+        }
+    }
+);
+
+/*
+ * Select a Partner Pal
+ * PUT /extension/pals/:palId/partner
+ */
+router.put(
+    "/pals/:palId/partner",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const palId = Array.isArray(req.params.palId)
+                ? req.params.palId[0]
+                : req.params.palId;
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                select: { id: true }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            const pal = await prisma.monster.findFirst({
+                where: {
+                    id: palId,
+                    ownerId: player.id
+                },
+                select: {
+                    id: true,
+                    species: true,
+                    nickname: true
+                }
+            });
+
+            if (!pal) {
+                return res.status(404).json({
+                    error: "Pal not found in your collection"
+                });
+            }
+
+            await prisma.player.update({
+                where: { id: player.id },
+                data: {
+                    partnerPalId: pal.id
+                }
+            });
+
+            return res.json({
+                message: "Partner Pal selected successfully",
+                partnerPalId: pal.id,
+                species: pal.species,
+                nickname: pal.nickname
+            });
+        } catch (error) {
+            console.error("Could not select Partner Pal:", error);
+
+            return res.status(500).json({
+                error: "Could not select Partner Pal"
+            });
+        }
+    }
+);
+
+/*
+ * Remove current Partner Pal
+ * DELETE /extension/pals/partner
+ */
+router.delete(
+    "/pals/partner",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId },
+                select: { id: true }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            await prisma.player.update({
+                where: { id: player.id },
+                data: {
+                    partnerPalId: null
+                }
+            });
+
+            return res.json({
+                message: "Partner Pal removed successfully"
+            });
+        } catch (error) {
+            console.error("Could not remove Partner Pal:", error);
+
+            return res.status(500).json({
+                error: "Could not remove Partner Pal"
             });
         }
     }

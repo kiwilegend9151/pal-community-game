@@ -110,6 +110,36 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function put<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${getExtensionToken()}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<T>;
+}
+
+async function del<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getExtensionToken()}`
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const extensionApi = {
   install: () =>
     post<InstallResponse>("/extension/install"),
@@ -117,8 +147,20 @@ export const extensionApi = {
   getProfile: () =>
     request<PlayerSummary>("/extension/me"),
 
-  getPals: () =>
-    request<{ total: number; pals: Pal[] }>("/extension/pals"),
+getPals: () =>
+  request<{
+    total: number;
+    partnerPalId: string | null;
+    pals: Pal[];
+  }>("/extension/pals"),
+
+  setPartnerPal: (palId: string) =>
+    put<{ message: string }>(
+      `/extension/pals/${encodeURIComponent(palId)}/partner`
+    ),
+
+  removePartnerPal: () =>
+    del<{ message: string }>("/extension/pals/partner"),
 
 renamePal: (palId: string, nickname: string) =>
   patch<{ message: string; nickname: string | null }>(

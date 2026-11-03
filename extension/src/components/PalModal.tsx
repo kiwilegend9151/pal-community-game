@@ -8,13 +8,23 @@ interface Props {
   pal: Pal | null;
   onClose: () => void;
   onUpdated: (palId: string, nickname: string | null) => void;
+  isPartner: boolean;
+  onPartnerChanged: (palId: string, isPartner: boolean) => void;
 }
 
-export function PalModal({ pal, onClose, onUpdated }: Props) {
+export function PalModal({
+  pal,
+  onClose,
+  onUpdated,
+  isPartner,
+  onPartnerChanged
+}: Props) {
   const [nickname, setNickname] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [partnerBusy, setPartnerBusy] = useState(false);
+  const [partnerError, setPartnerError] = useState("");
 
   useEffect(() => {
     setNickname(pal?.nickname ?? "");
@@ -52,6 +62,31 @@ export function PalModal({ pal, onClose, onUpdated }: Props) {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePartnerToggle() {
+    if (!pal || partnerBusy) return;
+
+    setPartnerBusy(true);
+    setPartnerError("");
+
+    try {
+      if (isPartner) {
+        await extensionApi.removePartnerPal();
+        onPartnerChanged(pal.id, false);
+      } else {
+        await extensionApi.setPartnerPal(pal.id);
+        onPartnerChanged(pal.id, true);
+      }
+    } catch (err) {
+      setPartnerError(
+        err instanceof Error
+          ? err.message
+          : "Could not update Partner Pal"
+      );
+    } finally {
+      setPartnerBusy(false);
     }
   }
 
@@ -151,6 +186,29 @@ export function PalModal({ pal, onClose, onUpdated }: Props) {
 
           {error && <p className="nickname-error">{error}</p>}
           {saved && <p className="nickname-success">Nickname saved!</p>}
+        </div>
+
+        <div className="partner-editor">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={handlePartnerToggle}
+            disabled={partnerBusy}
+          >
+            {partnerBusy
+              ? "Updating..."
+              : isPartner
+                ? "Remove as Partner Pal"
+                : "❤️ Set as Partner Pal"}
+          </button>
+
+          {isPartner && (
+            <p className="nickname-success">❤️ This is your Partner Pal!</p>
+          )}
+
+          {partnerError && (
+            <p className="nickname-error">{partnerError}</p>
+          )}
         </div>
 
         <dl className="stats-grid">

@@ -36,6 +36,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("pals");
   const [inventorySection, setInventorySection] = useState<"items" | "shop">("items");
   const [profile, setProfile] = useState<PlayerSummary | null>(null);
+  const [partnerPalId, setPartnerPalId] = useState<string | null>(null);
   const [pals, setPals] = useState<Pal[]>([]);
   const [paldex, setPaldex] = useState<PaldeckSummary | null>(null);
   const [quests, setQuests] = useState<DailyQuest[]>([]);
@@ -107,6 +108,7 @@ const [
 
       setProfile(profileData);
       setPals(palsData.pals);
+      setPartnerPalId(palsData.partnerPalId);
       setPaldex(paldexData);
       setExpedition(expeditionData);
       setQuests(questsData.quests);
@@ -123,6 +125,13 @@ const [
       );
     }
   }, []);
+
+const handlePartnerChanged = useCallback(
+  (palId: string, isPartner: boolean) => {
+    setPartnerPalId(isPartner ? palId : null);
+  },
+  []
+);
 
   const installExtension = useCallback(async () => {
     setInstallState("installing");
@@ -254,7 +263,10 @@ const filteredPals = useMemo(() => {
   const value = query.trim().toLowerCase();
 
   const filtered = pals.filter((pal) => {
-    const matchesSearch = !value || pal.species.toLowerCase().includes(value);
+    const matchesSearch =
+  !value ||
+  pal.species.toLowerCase().includes(value) ||
+  (pal.nickname ?? "").toLowerCase().includes(value);
     return matchesSearch && (!luckyOnly || pal.shiny);
   });
 
@@ -489,6 +501,7 @@ console.log("[APP] activeTab:", activeTab);
                   pal={pal}
                   selected={selectedPal?.id === pal.id}
                   onSelect={setSelectedPal}
+ 		  isPartner={partnerPalId === pal.id}
                 />
               ))}
             </div>
@@ -751,11 +764,13 @@ console.log("[APP] activeTab:", activeTab);
               <option value="">Choose a Pal</option>
 
               {pals.map((pal) => (
-                <option key={pal.id} value={pal.id}>
-                  {pal.shiny ? "✨ " : ""}
-                  {pal.species} — Lv. {pal.level}
-                </option>
-              ))}
+  <option key={pal.id} value={pal.id}>
+    {pal.shiny ? "✨ " : ""}
+    {pal.nickname?.trim()
+      ? `${pal.nickname.trim()} (${pal.species})`
+      : pal.species} — Lv. {pal.level}
+  </option>
+))}
             </select>
           </article>
         </div>
@@ -988,7 +1003,10 @@ console.log("[APP] activeTab:", activeTab);
         : currentPal
     );
   }}
+  isPartner={partnerPalId === selectedPal?.id}
+  onPartnerChanged={handlePartnerChanged}
 />
+
     </main>
   );
 }
