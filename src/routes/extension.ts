@@ -883,11 +883,12 @@ router.put(
             }
 
             await prisma.player.update({
-                where: { id: player.id },
-                data: {
-                    partnerPalId: pal.id
-                }
-            });
+    where: { id: player.id },
+    data: {
+        partnerPalId: pal.id,
+        partnerSince: new Date()
+    }
+});
 
             return res.json({
                 message: "Partner Pal selected successfully",
@@ -928,11 +929,12 @@ router.delete(
             }
 
             await prisma.player.update({
-                where: { id: player.id },
-                data: {
-                    partnerPalId: null
-                }
-            });
+    where: { id: player.id },
+    data: {
+        partnerPalId: null,
+        partnerSince: null
+    }
+});
 
             return res.json({
                 message: "Partner Pal removed successfully"

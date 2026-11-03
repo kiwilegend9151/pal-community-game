@@ -1156,7 +1156,59 @@ if (messageId) {
         return;
     }
 
+if (command === "!partner") {
+    try {
+        const player = await prisma.player.findUnique({
+            where: {
+                twitchId: viewerTwitchId
+            },
+            select: {
+                username: true,
+                partnerPal: {
+                    select: {
+                        species: true,
+                        nickname: true
+                    }
+                }
+            }
+        });
 
+        if (!player) {
+            await client.say(
+                currentChannel,
+                `❤️ ${viewerName}, use !start first to create your player profile!`
+            );
+            return;
+        }
+
+        if (!player.partnerPal) {
+            await client.say(
+                currentChannel,
+                `❤️ ${player.username} hasn't chosen a Partner Pal yet! Choose one in your Pal collection.`
+            );
+            return;
+        }
+
+        const palName =
+            player.partnerPal.nickname?.trim() ||
+            player.partnerPal.species;
+
+        await client.say(
+            currentChannel,
+            `❤️ ${player.username}'s Partner Pal is ${palName}!`
+        );
+
+    } catch (error) {
+        console.error("!partner command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your Partner Pal could not be loaded.`
+        );
+    }
+
+    return;
+}
 
 if (command === "!pallive") {
     try {
@@ -1346,7 +1398,7 @@ if (command.startsWith("!link ")) {
             "📖 Pal Community Game Commands | " +
             " !start |!catch | !catch mega | !catch giga | !catch hyper | " +
             "!collection | !profile | !paldex | !daily | !craft | " +
-            "!shop | !buy | !inventory | !expedition | !dc | !leaderboard | " +
+            "!shop | !buy | !inventory | !expedition | !partner | !dc | !leaderboard | " +
 	    "Use !help 2 or !help 3 for more."
         );
         return;

@@ -32,6 +32,7 @@ dailyPeriod String?
 
   monsters      Monster[]
   partnerPalId String?  @unique
+  partnerSince DateTime?
   partnerPal   Monster? @relation("PlayerPartnerPal", fields: [partnerPalId], references: [id], onDelete: SetNull)
   paldexEntries PaldexEntry[]
   dailyQuests   DailyQuest[]
