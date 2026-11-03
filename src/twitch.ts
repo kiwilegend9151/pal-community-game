@@ -2636,11 +2636,15 @@ if (command === "!daily") {
                 requestedSpecies.toLowerCase();
 
             const selectedMonster = player.monsters.find(
-                (monster) =>
-                    monster.species.trim().toLowerCase() ===
-                        normalizedRequestedSpecies &&
-                    monster.expedition === null
-            );
+    (monster) =>
+        (
+            monster.species.trim().toLowerCase() ===
+                normalizedRequestedSpecies ||
+            (monster.nickname ?? "").trim().toLowerCase() ===
+                normalizedRequestedSpecies
+        ) &&
+        monster.expedition === null
+);
 
             if (!selectedMonster) {
                 await client.say(
