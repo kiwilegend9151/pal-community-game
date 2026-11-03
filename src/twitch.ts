@@ -1164,10 +1164,12 @@ if (command === "!partner") {
             },
             select: {
                 username: true,
+                partnerSince: true,
                 partnerPal: {
                     select: {
                         species: true,
-                        nickname: true
+                        nickname: true,
+                        level: true
                     }
                 }
             }
@@ -1189,13 +1191,40 @@ if (command === "!partner") {
             return;
         }
 
-        const palName =
-            player.partnerPal.nickname?.trim() ||
-            player.partnerPal.species;
+        const pal = player.partnerPal;
+
+        const palName = pal.nickname?.trim()
+            ? `${pal.nickname.trim()} (${pal.species})`
+            : pal.species;
+
+        let partnerDuration = "an unknown amount of time";
+
+        if (player.partnerSince) {
+            const elapsedMinutes = Math.max(
+                0,
+                Math.floor(
+                    (Date.now() - player.partnerSince.getTime()) / 60000
+                )
+            );
+
+            const days = Math.floor(elapsedMinutes / 1440);
+            const hours = Math.floor((elapsedMinutes % 1440) / 60);
+            const minutes = elapsedMinutes % 60;
+
+            if (days > 0) {
+                partnerDuration = `${days} day(s), ${hours} hour(s)`;
+            } else if (hours > 0) {
+                partnerDuration = `${hours} hour(s), ${minutes} minute(s)`;
+            } else {
+                partnerDuration = `${minutes} minute(s)`;
+            }
+        }
 
         await client.say(
             currentChannel,
-            `❤️ ${player.username}'s Partner Pal is ${palName}!`
+            `❤️ ${player.username}'s Partner Pal is ${palName} | ` +
+            `Lv. ${pal.level} | ` +
+            `Partner for ${partnerDuration}!`
         );
 
     } catch (error) {
