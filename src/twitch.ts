@@ -3266,6 +3266,43 @@ await updateDailyQuestProgress(
                     streamerId: wildMonster.streamerId
                 }
             });
+// Award 10 XP to the player's Partner Pal for a successful catch.
+if (player.partnerPalId) {
+    const partnerPal = await tx.monster.findFirst({
+        where: {
+            id: player.partnerPalId,
+            ownerId: player.id
+        },
+        select: {
+            id: true,
+            palXp: true,
+            level: true
+        }
+    });
+
+    if (partnerPal && partnerPal.level < PAL_LEVEL_CAP) {
+        let partnerXp = partnerPal.palXp + 10;
+        let partnerLevel = partnerPal.level;
+
+        while (
+            partnerLevel < PAL_LEVEL_CAP &&
+            partnerXp >= partnerLevel * 100
+        ) {
+            partnerXp -= partnerLevel * 100;
+            partnerLevel++;
+        }
+
+        await tx.monster.update({
+            where: {
+                id: partnerPal.id
+            },
+            data: {
+                palXp: partnerXp,
+                level: partnerLevel
+            }
+        });
+    }
+}
 
 
 const eventYear = getUKCalendarYear();
