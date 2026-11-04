@@ -23,6 +23,10 @@ dailyPeriod String?
   megaSpheres  Int @default(0)
   gigaSpheres  Int @default(0)
   hyperSpheres Int @default(0)
+  trainingManualS  Int @default(0)
+  trainingManualM  Int @default(0)
+  trainingManualL  Int @default(0)
+  trainingManualXL Int @default(0)
 
   hasClaimedStarter Boolean @default(false)
 

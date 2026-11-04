@@ -162,6 +162,14 @@ getPals: () =>
   removePartnerPal: () =>
     del<{ message: string }>("/extension/pals/partner"),
 
+  releasePal: (palId: string) =>
+    del<{
+      message: string;
+      trainingManualS: number;
+    }>(
+      `/extension/pals/${encodeURIComponent(palId)}/release`
+    ),
+
 renamePal: (palId: string, nickname: string) =>
   patch<{ message: string; nickname: string | null }>(
     `/extension/pals/${encodeURIComponent(palId)}/nickname`,
@@ -179,6 +187,20 @@ renamePal: (palId: string, nickname: string) =>
       sphereType,
       quantity
     }),
+
+  useTrainingManual: (manualType: "S" | "M" | "L" | "XL") =>
+    post<{
+      message: string;
+      xpAwarded: number;
+      level: number;
+      palXp: number;
+      manuals: {
+        trainingManualS: number;
+        trainingManualM: number;
+        trainingManualL: number;
+        trainingManualXL: number;
+      } | null;
+    }>("/extension/manuals/use", { manualType }),
 
   getExpedition: () =>
     request<ExpeditionStatusResponse>(

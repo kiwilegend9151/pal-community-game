@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Player" ADD COLUMN     "trainingManualL" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trainingManualM" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trainingManualS" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trainingManualXL" INTEGER NOT NULL DEFAULT 0;

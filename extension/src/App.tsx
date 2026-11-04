@@ -66,7 +66,8 @@ const [expeditionPalId, setExpeditionPalId] = useState("");
 const [expeditionMessage, setExpeditionMessage] = useState("");
 const [expeditionBusy, setExpeditionBusy] = useState(false);
 const [expeditionNow, setExpeditionNow] = useState(Date.now());
-
+const [manualBusy, setManualBusy] = useState(false);
+const [manualMessage, setManualMessage] = useState("");
 
 
 const params = new URLSearchParams(window.location.search);
@@ -131,6 +132,37 @@ const handlePartnerChanged = useCallback(
     setPartnerPalId(isPartner ? palId : null);
   },
   []
+);
+
+const handlePalReleased = useCallback(
+  (palId: string) => {
+    const releasedPal = pals.find((pal) => pal.id === palId);
+
+    setPals((currentPals) =>
+      currentPals.filter((pal) => pal.id !== palId)
+    );
+
+    setProfile((currentProfile) =>
+      currentProfile
+        ? {
+            ...currentProfile,
+trainingManualS: currentProfile.trainingManualS + 1,
+totalPals: Math.max(0, currentProfile.totalPals - 1),
+            totalLucky: Math.max(
+              0,
+              currentProfile.totalLucky - (releasedPal?.shiny ? 1 : 0)
+            )
+          }
+        : currentProfile
+    );
+
+    if (partnerPalId === palId) {
+      setPartnerPalId(null);
+    }
+
+    setSelectedPal(null);
+  },
+  [pals, partnerPalId]
 );
 
   const installExtension = useCallback(async () => {
@@ -242,6 +274,30 @@ const claimQuestRewards = useCallback(async () => {
     setQuestsBusy(false);
   }
 }, [loadData]);
+
+const handleUseManual = useCallback(
+  async (manualType: "S" | "M" | "L" | "XL") => {
+    setManualBusy(true);
+    setManualMessage("");
+
+    try {
+      const result = await extensionApi.useTrainingManual(manualType);
+
+      setManualMessage(result.message);
+
+      await loadData();
+    } catch (useError) {
+      setManualMessage(
+        useError instanceof Error
+          ? useError.message
+          : "Could not use Training Manual"
+      );
+    } finally {
+      setManualBusy(false);
+    }
+  },
+  [loadData]
+);
 
 useEffect(() => {
   console.log("[APP] starting Twitch initialisation");
@@ -643,6 +699,70 @@ console.log("[APP] activeTab:", activeTab);
         </div>
         <strong>{profile.stone}</strong>
       </article>
+{[
+  {
+    type: "S" as const,
+    name: "Training Manual S",
+    amount: profile.trainingManualS,
+    description: "100 Pal XP",
+    image: "training-manual-s.webp"
+  },
+  {
+    type: "M" as const,
+    name: "Training Manual M",
+    amount: profile.trainingManualM,
+    description: "250 Pal XP",
+    image: "training-manual-m.webp"
+  },
+  {
+    type: "L" as const,
+    name: "Training Manual L",
+    amount: profile.trainingManualL,
+    description: "500 Pal XP",
+    image: "training-manual-l.webp"
+  },
+  {
+    type: "XL" as const,
+    name: "Training Manual XL",
+    amount: profile.trainingManualXL,
+    description: "1,000 Pal XP",
+    image: "training-manual-xl.webp"
+  }
+].map((manual) => (
+  <article key={manual.name} className="inventory-item">
+    <div className="inventory-item-info">
+      <img
+        src={inventoryImage(manual.image)}
+        alt={manual.name}
+        className="inventory-item-image"
+      />
+      <div>
+        <span>{manual.name}</span>
+        <small>{manual.description}</small>
+      </div>
+    </div>
+
+    <div className="shop-controls">
+      <strong>{manual.amount}</strong>
+      <button
+        className="primary-button"
+        disabled={
+          manual.amount <= 0 ||
+          !partnerPalId ||
+          manualBusy ||
+          (pals.find((pal) => pal.id === partnerPalId)?.level ?? 0) >= 80
+        }
+        onClick={() => void handleUseManual(manual.type)}
+      >
+        {manualBusy ? "Using..." : "Use"}
+      </button>
+    </div>
+  </article>
+))}
+
+{manualMessage && (
+  <p className="error-text">{manualMessage}</p>
+)}
       </div>
     )}
 
@@ -1005,6 +1125,7 @@ console.log("[APP] activeTab:", activeTab);
   }}
   isPartner={partnerPalId === selectedPal?.id}
   onPartnerChanged={handlePartnerChanged}
+  onReleased={handlePalReleased}
 />
 
     </main>

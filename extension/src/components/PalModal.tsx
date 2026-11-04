@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import type { Pal } from "../types";
 import { extensionApi } from "../lib/api";
@@ -10,6 +11,7 @@ interface Props {
   onUpdated: (palId: string, nickname: string | null) => void;
   isPartner: boolean;
   onPartnerChanged: (palId: string, isPartner: boolean) => void;
+  onReleased: (palId: string) => void;
 }
 
 export function PalModal({
@@ -17,7 +19,8 @@ export function PalModal({
   onClose,
   onUpdated,
   isPartner,
-  onPartnerChanged
+  onPartnerChanged,
+  onReleased
 }: Props) {
   const [nickname, setNickname] = useState("");
   const [saving, setSaving] = useState(false);
@@ -25,11 +28,16 @@ export function PalModal({
   const [saved, setSaved] = useState(false);
   const [partnerBusy, setPartnerBusy] = useState(false);
   const [partnerError, setPartnerError] = useState("");
+  const [confirmRelease, setConfirmRelease] = useState(false);
+  const [releaseBusy, setReleaseBusy] = useState(false);
+  const [releaseError, setReleaseError] = useState("");
 
   useEffect(() => {
     setNickname(pal?.nickname ?? "");
     setError("");
     setSaved(false);
+    setConfirmRelease(false);
+    setReleaseError("");
   }, [pal?.id, pal?.nickname]);
 
   if (!pal) return null;
@@ -87,6 +95,26 @@ export function PalModal({
       );
     } finally {
       setPartnerBusy(false);
+    }
+  }
+
+  async function handleRelease() {
+    if (!pal || releaseBusy) return;
+
+    setReleaseBusy(true);
+    setReleaseError("");
+
+    try {
+      await extensionApi.releasePal(pal.id);
+      onReleased(pal.id);
+    } catch (err) {
+      setReleaseError(
+        err instanceof Error
+          ? err.message
+          : "Could not release Pal"
+      );
+    } finally {
+      setReleaseBusy(false);
     }
   }
 
@@ -193,7 +221,7 @@ export function PalModal({
             type="button"
             className="primary-button"
             onClick={handlePartnerToggle}
-            disabled={partnerBusy}
+            disabled={partnerBusy || releaseBusy}
           >
             {partnerBusy
               ? "Updating..."
@@ -208,6 +236,64 @@ export function PalModal({
 
           {partnerError && (
             <p className="nickname-error">{partnerError}</p>
+          )}
+        </div>
+
+        <div className="release-editor">
+          {!confirmRelease ? (
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmRelease(true);
+                setReleaseError("");
+              }}
+              disabled={releaseBusy || partnerBusy || saving}
+            >
+              Release Pal
+            </button>
+          ) : (
+            <div className="release-confirmation">
+              <h3>Release this Pal?</h3>
+
+              <p>
+                This action cannot be undone. {pal.species} will
+                permanently leave your collection.
+              </p>
+
+              <p>
+                You will receive <strong>1 Training Manual S</strong>.
+              </p>
+
+              {isPartner && (
+                <p>
+                  This is your Partner Pal. Releasing it will remove
+                  your current Partner Pal assignment.
+                </p>
+              )}
+
+              <div className="release-confirmation-buttons">
+                <button
+                  type="button"
+                  onClick={() => setConfirmRelease(false)}
+                  disabled={releaseBusy}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={handleRelease}
+                  disabled={releaseBusy}
+                >
+                  {releaseBusy ? "Releasing..." : "Confirm Release"}
+                </button>
+              </div>
+
+              {releaseError && (
+                <p className="nickname-error">{releaseError}</p>
+              )}
+            </div>
           )}
         </div>
 

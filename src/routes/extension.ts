@@ -329,6 +329,10 @@ router.get(
 		paldium: player.paldium,
 		wood: player.wood,
 		stone: player.stone,
+		trainingManualS: player.trainingManualS,
+		trainingManualM: player.trainingManualM,
+		trainingManualL: player.trainingManualL,
+		trainingManualXL: player.trainingManualXL,
             });
         } catch (error) {
             console.error("Could not load extension profile:", error);
@@ -443,6 +447,195 @@ router.post(
 
             return res.status(500).json({
                 error: "Purchase could not be completed"
+            });
+        }
+    }
+);
+
+/*
+ * Use a Training Manual on the current Partner Pal
+ * POST /extension/manuals/use
+ */
+router.post(
+    "/manuals/use",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const body = req.body as {
+                manualType?: "S" | "M" | "L" | "XL";
+            };
+
+            const manualType = body.manualType;
+
+            const manuals = {
+                S: {
+                    field: "trainingManualS",
+                    xp: 100
+                },
+                M: {
+                    field: "trainingManualM",
+                    xp: 250
+                },
+                L: {
+                    field: "trainingManualL",
+                    xp: 500
+                },
+                XL: {
+                    field: "trainingManualXL",
+                    xp: 1000
+                }
+            } as const;
+
+            if (!manualType || !(manualType in manuals)) {
+                return res.status(400).json({
+                    error: "Invalid Training Manual type"
+                });
+            }
+
+            const manual = manuals[manualType];
+            const PAL_LEVEL_CAP = 80;
+
+            const result = await prisma.$transaction(async (tx) => {
+                const player = await tx.player.findUnique({
+                    where: { twitchId },
+                    select: {
+                        id: true,
+                        partnerPalId: true
+                    }
+                });
+
+                if (!player) {
+                    return {
+                        success: false as const,
+                        status: 404,
+                        error: "Player not found"
+                    };
+                }
+
+                if (!player.partnerPalId) {
+                    return {
+                        success: false as const,
+                        status: 400,
+                        error: "You need to select a Partner Pal first"
+                    };
+                }
+
+                const pal = await tx.monster.findFirst({
+                    where: {
+                        id: player.partnerPalId,
+                        ownerId: player.id
+                    },
+                    select: {
+                        id: true,
+                        species: true,
+                        nickname: true,
+                        level: true,
+                        palXp: true
+                    }
+                });
+
+                if (!pal) {
+                    return {
+                        success: false as const,
+                        status: 404,
+                        error: "Your Partner Pal could not be found"
+                    };
+                }
+
+                if (pal.level >= PAL_LEVEL_CAP) {
+                    return {
+                        success: false as const,
+                        status: 400,
+                        error: "Your Partner Pal is already at the level cap"
+                    };
+                }
+
+                const consumed = await tx.player.updateMany({
+                    where: {
+                        id: player.id,
+                        [manual.field]: {
+                            gte: 1
+                        }
+                    },
+                    data: {
+                        [manual.field]: {
+                            decrement: 1
+                        }
+                    }
+                });
+
+                if (consumed.count !== 1) {
+                    return {
+                        success: false as const,
+                        status: 400,
+                        error: `You don't have any Training Manual ${manualType}`
+                    };
+                }
+
+                let palXp = pal.palXp + manual.xp;
+                let palLevel = pal.level;
+
+                while (
+                    palLevel < PAL_LEVEL_CAP &&
+                    palXp >= palLevel * 100
+                ) {
+                    palXp -= palLevel * 100;
+                    palLevel++;
+                }
+
+                await tx.monster.update({
+                    where: {
+                        id: pal.id
+                    },
+                    data: {
+                        palXp,
+                        level: palLevel
+                    }
+                });
+
+                const updatedPlayer = await tx.player.findUnique({
+                    where: {
+                        id: player.id
+                    },
+                    select: {
+                        trainingManualS: true,
+                        trainingManualM: true,
+                        trainingManualL: true,
+                        trainingManualXL: true
+                    }
+                });
+
+                return {
+                    success: true as const,
+                    species: pal.species,
+                    nickname: pal.nickname,
+                    xpAwarded: manual.xp,
+                    level: palLevel,
+                    palXp,
+                    manuals: updatedPlayer
+                };
+            });
+
+            if (!result.success) {
+                return res.status(result.status).json({
+                    error: result.error
+                });
+            }
+
+            return res.json({
+                message: `Used Training Manual ${manualType} on ${result.nickname || result.species}. +${result.xpAwarded} XP!`,
+                xpAwarded: result.xpAwarded,
+                level: result.level,
+                palXp: result.palXp,
+                manuals: result.manuals
+            });
+        } catch (error) {
+            console.error("Could not use Training Manual:", error);
+
+            return res.status(500).json({
+                error: "Could not use Training Manual"
             });
         }
     }
@@ -765,6 +958,131 @@ router.get(
     }
 );
 
+
+/*
+ * Release a Pal
+ * DELETE /extension/pals/:palId/release
+ */
+router.delete(
+    "/pals/:palId/release",
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const palId = Array.isArray(req.params.palId)
+                ? req.params.palId[0]
+                : req.params.palId;
+
+            const result = await prisma.$transaction(async (tx) => {
+                const player = await tx.player.findUnique({
+                    where: { twitchId },
+                    select: {
+                        id: true,
+                        partnerPalId: true
+                    }
+                });
+
+                if (!player) {
+                    return {
+                        success: false as const,
+                        status: 404,
+                        error: "Player not found"
+                    };
+                }
+
+                const pal = await tx.monster.findFirst({
+                    where: {
+                        id: palId,
+                        ownerId: player.id
+                    },
+                    include: {
+                        expedition: true
+                    }
+                });
+
+                if (!pal) {
+                    return {
+                        success: false as const,
+                        status: 404,
+                        error: "Pal not found in your collection"
+                    };
+                }
+
+                if (pal.expedition) {
+                    return {
+                        success: false as const,
+                        status: 400,
+                        error: "You cannot release a Pal while it is on an expedition"
+                    };
+                }
+
+                // Only release the Pal if it is still owned and not on an expedition.
+                const deleted = await tx.monster.deleteMany({
+                    where: {
+                        id: palId,
+                        ownerId: player.id,
+                        expedition: {
+                            is: null
+                        }
+                    }
+                });
+
+                if (deleted.count !== 1) {
+                    return {
+                        success: false as const,
+                        status: 400,
+                        error: "This Pal could not be released. Please refresh and try again."
+                    };
+                }
+
+                const updatedPlayer = await tx.player.update({
+                    where: {
+                        id: player.id
+                    },
+                    data: {
+                        trainingManualS: {
+                            increment: 1
+                        },
+                        ...(player.partnerPalId === palId
+                            ? {
+                                partnerPalId: null,
+                                partnerSince: null
+                            }
+                            : {})
+                    },
+                    select: {
+                        trainingManualS: true
+                    }
+                });
+
+                return {
+                    success: true as const,
+                    species: pal.species,
+                    nickname: pal.nickname,
+                    trainingManualS: updatedPlayer.trainingManualS
+                };
+            });
+
+            if (!result.success) {
+                return res.status(result.status).json({
+                    error: result.error
+                });
+            }
+
+            return res.json({
+                message: `${result.nickname || result.species} was released successfully. You received 1 Training Manual S.`,
+                trainingManualS: result.trainingManualS
+            });
+        } catch (error) {
+            console.error("Could not release Pal:", error);
+
+            return res.status(500).json({
+                error: "Could not release Pal"
+            });
+        }
+    }
+);
 
 /*
  * Update a Pal nickname

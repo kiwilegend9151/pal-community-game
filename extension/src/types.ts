@@ -38,6 +38,10 @@ export interface PlayerSummary {
   paldium: number;
   wood: number;
   stone: number;
+  trainingManualS: number;
+  trainingManualM: number;
+  trainingManualL: number;
+  trainingManualXL: number;
 }
 
 export interface PaldeckSummary {
