@@ -1095,66 +1095,54 @@ if (messageId) {
 
 
     if (command === "!palrank") {
-        try {
-            const player = await prisma.player.findUnique({
-                where: { twitchId: viewerTwitchId },
-                select: {
-                    id: true,
-                    username: true,
-                    _count: {
-                        select: {
-                            monsters: true
-                        }
-                    }
-                }
-            });
-
-            if (!player) {
-                await client.say(
-                    currentChannel,
-                    `🏆 ${viewerName}, use !start first to create your player profile!`
-                );
-                return;
+    try {
+        const player = await prisma.player.findUnique({
+            where: { twitchId: viewerTwitchId },
+            select: {
+                id: true,
+                username: true,
+                totalPalsCaught: true
             }
+        });
 
-            const playerCount = await prisma.player.count();
-
-            const allPlayers = await prisma.player.findMany({
-                select: {
-                    id: true,
-                    _count: {
-                        select: {
-                            monsters: true
-                        }
-                    }
-                }
-            });
-
-            const catches = player._count.monsters;
-
-            const playersAhead = allPlayers.filter(
-                (entry) => entry._count.monsters > catches
-            ).length;
-
-            const rank = playersAhead + 1;
-
+        if (!player) {
             await client.say(
                 currentChannel,
-                `🏆 ${player.username} has caught ${catches} ` +
-                `Pal${catches === 1 ? "" : "s"} and is ranked ` +
-                `#${rank} out of ${playerCount} players!`
+                `🏆 ${viewerName}, use !start first to create your player profile!`
             );
-        } catch (error) {
-            console.error("!palrank command failed:", error);
-
-            await client.say(
-                currentChannel,
-                `❌ Sorry ${viewerName}, your Pal rank could not be loaded.`
-            );
+            return;
         }
 
-        return;
+        const playerCount = await prisma.player.count();
+
+        const playersAhead = await prisma.player.count({
+            where: {
+                totalPalsCaught: {
+                    gt: player.totalPalsCaught
+                }
+            }
+        });
+
+        const rank = playersAhead + 1;
+        const catches = player.totalPalsCaught;
+
+        await client.say(
+            currentChannel,
+            `🏆 ${player.username} has caught ${catches} ` +
+            `Pal${catches === 1 ? "" : "s"} and is ranked ` +
+            `#${rank} out of ${playerCount} players!`
+        );
+    } catch (error) {
+        console.error("!palrank command failed:", error);
+
+        await client.say(
+            currentChannel,
+            `❌ Sorry ${viewerName}, your Pal rank could not be loaded.`
+        );
     }
+
+    return;
+}
 
 if (command === "!partner") {
     try {
@@ -1799,79 +1787,42 @@ if (command === "!start") {
 }
 
 if (command === "!leaderboard") {
-    const now = Date.now();
-    const lastUsed = leaderboardCooldowns.get(currentChannel);
+  const topPlayers = await prisma.player.findMany({
+    select: {
+      username: true,
+      totalPalsCaught: true
+    },
+    orderBy: [
+      {
+        totalPalsCaught: "desc"
+      },
+      {
+        username: "asc"
+      }
+    ],
+    take: 5
+  });
 
-    if (lastUsed && now - lastUsed < LEADERBOARD_COOLDOWN) {
-        const remainingSeconds = Math.ceil(
-            (LEADERBOARD_COOLDOWN - (now - lastUsed)) / 1000
-        );
-
-        await client.say(
-            currentChannel,
-            `⏳ The leaderboard is on cooldown. Try again in ${remainingSeconds}s.`
-        );
-
-        return;
-    }
-
-    leaderboardCooldowns.set(currentChannel, now);
-
-    try {
-        const topPlayers = await prisma.player.findMany({
-            select: {
-                username: true,
-                _count: {
-                    select: {
-                        monsters: true
-                    }
-                }
-            },
-            orderBy: [
-                {
-                    monsters: {
-                        _count: "desc"
-                    }
-                },
-                {
-                    username: "asc"
-                }
-            ],
-            take: 5
-        });
-
-        if (topPlayers.length === 0) {
-            await client.say(
-                currentChannel,
-                "🏆 The Pal leaderboard is empty! Catch a Pal to get started."
-            );
-
-            return;
-        }
-
-        const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-
-        const leaderboard = topPlayers
-            .map(
-                (player, index) =>
-                    `${medals[index]} ${player.username} — ${player._count.monsters} Pals`
-            )
-            .join(" | ");
-
-        await client.say(
-            currentChannel,
-            `🏆 Top 5 Pal Collectors: ${leaderboard}`
-        );
-    } catch (error) {
-        console.error("Leaderboard command failed:", error);
-
-        await client.say(
-            currentChannel,
-            `❌ Sorry ${viewerName}, the leaderboard could not be loaded.`
-        );
-    }
-
+  if (topPlayers.length === 0) {
+    await client.say(currentChannel, "🏆 No players have caught any Pals yet!");
     return;
+  }
+
+  const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+  const leaderboard = topPlayers
+    .map(
+      (player, index) =>
+        `${medals[index]} ${player.username} — ${player.totalPalsCaught} Pals`
+    )
+    .join(" | ");
+
+  await client.say(
+    currentChannel,
+    `🏆 Top 5 Pal Catchers: ${leaderboard}`
+  );
+
+  return;
 }
 
 if (
@@ -3266,6 +3217,14 @@ await updateDailyQuestProgress(
                     streamerId: wildMonster.streamerId
                 }
             });
+
+            await tx.player.update({
+                where: { id: player.id },
+                data: {
+                    totalPalsCaught: { increment: 1 }
+                }
+            });
+
 // Award 10 XP to the player's Partner Pal for a successful catch.
 if (player.partnerPalId) {
     const partnerPal = await tx.monster.findFirst({
