@@ -9,7 +9,8 @@ import axios from "axios";
 import { prisma } from "../database";
 import {
     connectStreamer,
-    getOrCreateDailyQuests
+    getOrCreateDailyQuests,
+    updateDailyQuestProgress
 } from "../twitch";
 import { monsterTemplates } from "../monsters";
 import {
@@ -447,6 +448,142 @@ router.post(
 
             return res.status(500).json({
                 error: "Purchase could not be completed"
+            });
+        }
+    }
+);
+
+/*
+ * Craft spheres using gathered materials
+ * POST /extension/craft
+ */
+router.post(
+    "/craft",
+    shopLimiter,
+    requireExtensionPlayer,
+    async (req: ExtensionRequest, res) => {
+        try {
+            const twitchId = req.extensionUser!.twitchId;
+
+            const body = req.body as {
+                sphereType?: "pal" | "mega" | "giga" | "hyper";
+                quantity?: number;
+            };
+
+            const sphereType = body.sphereType;
+            const quantity = body.quantity ?? 1;
+
+            const recipes = {
+                pal: {
+                    displayName: "Pal Sphere",
+                    paldium: 1,
+                    wood: 0,
+                    stone: 0,
+                    field: "palSpheres"
+                },
+                mega: {
+                    displayName: "Mega Sphere",
+                    paldium: 1,
+                    wood: 2,
+                    stone: 2,
+                    field: "megaSpheres"
+                },
+                giga: {
+                    displayName: "Giga Sphere",
+                    paldium: 2,
+                    wood: 4,
+                    stone: 4,
+                    field: "gigaSpheres"
+                },
+                hyper: {
+                    displayName: "Hyper Sphere",
+                    paldium: 3,
+                    wood: 5,
+                    stone: 5,
+                    field: "hyperSpheres"
+                }
+            } as const;
+
+            if (!sphereType || !(sphereType in recipes)) {
+                return res.status(400).json({
+                    error: "Invalid sphere type"
+                });
+            }
+
+            if (
+                !Number.isInteger(quantity) ||
+                quantity < 1 ||
+                quantity > 100
+            ) {
+                return res.status(400).json({
+                    error: "Quantity must be between 1 and 100"
+                });
+            }
+
+            const recipe = recipes[sphereType];
+
+            const player = await prisma.player.findUnique({
+                where: { twitchId }
+            });
+
+            if (!player) {
+                return res.status(404).json({
+                    error: "Player not found"
+                });
+            }
+
+            const requiredPaldium = recipe.paldium * quantity;
+            const requiredWood = recipe.wood * quantity;
+            const requiredStone = recipe.stone * quantity;
+
+            const result = await prisma.player.updateMany({
+                where: {
+                    id: player.id,
+                    paldium: { gte: requiredPaldium },
+                    wood: { gte: requiredWood },
+                    stone: { gte: requiredStone }
+                },
+                data: {
+                    paldium: { decrement: requiredPaldium },
+                    wood: { decrement: requiredWood },
+                    stone: { decrement: requiredStone },
+                    [recipe.field]: { increment: quantity }
+                }
+            });
+
+            if (result.count !== 1) {
+                return res.status(400).json({
+                    error:
+                        `Not enough materials. You need ${requiredPaldium} Paldium, ` +
+                        `${requiredWood} Wood and ${requiredStone} Stone.`
+                });
+            }
+
+            await updateDailyQuestProgress(
+                player.id,
+                "craft_spheres",
+                quantity
+            );
+
+            const updatedPlayer = await prisma.player.findUnique({
+                where: { id: player.id }
+            });
+
+            return res.json({
+                message: `Successfully crafted ${quantity} ${recipe.displayName}${quantity === 1 ? "" : "s"}`,
+                paldium: updatedPlayer?.paldium ?? 0,
+                wood: updatedPlayer?.wood ?? 0,
+                stone: updatedPlayer?.stone ?? 0,
+                palSpheres: updatedPlayer?.palSpheres ?? 0,
+                megaSpheres: updatedPlayer?.megaSpheres ?? 0,
+                gigaSpheres: updatedPlayer?.gigaSpheres ?? 0,
+                hyperSpheres: updatedPlayer?.hyperSpheres ?? 0
+            });
+        } catch (error) {
+            console.error("Extension crafting failed:", error);
+
+            return res.status(500).json({
+                error: "Crafting could not be completed"
             });
         }
     }
