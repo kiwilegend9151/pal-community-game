@@ -12,6 +12,7 @@ model Player {
   twitchId String @unique
   discordId String? @unique
   username String
+  totalPalsCaught Int @default(0)
 
 level       Int       @default(1)
 xp          Int       @default(0)
