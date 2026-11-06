@@ -3395,7 +3395,7 @@ export const monsterTemplates = [
         attack: 140,
         defense: 120,
         speed: 10,
-	paldeck: "202",
+	paldeck: "202A",
 	type1: "Dragon",
 	type2: "",
         rarity: "Mythical"
