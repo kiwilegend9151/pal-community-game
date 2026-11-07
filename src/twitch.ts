@@ -2843,16 +2843,22 @@ if (command === "!daily") {
                 }
 
 
-                const PAL_EXPEDITION_XP = 100;
                 const monster = expedition.monster;
+                const megaSphereReward = expedition.megaSphereReward ?? 0;
+                const trainingManualSReward = expedition.trainingManualSReward ?? 0;
+                const trainingManualMReward = expedition.trainingManualMReward ?? 0;
+
+                // Preserve 100 XP for Normal expeditions; Hard awards 200.
+                const palXpReward =
+                    expedition.palXpReward ||
+                    (expedition.difficulty === "hard" ? 200 : 100);
 
                 let palXp = monster.palXp;
                 let palLevel = monster.level;
                 let levelUps = 0;
 
-                // Award XP only if the Pal is below level 80.
                 if (palLevel < PAL_LEVEL_CAP) {
-                    palXp += PAL_EXPEDITION_XP;
+                    palXp += palXpReward;
 
                     while (
                         palLevel < PAL_LEVEL_CAP &&
@@ -2865,48 +2871,40 @@ if (command === "!daily") {
 
                     await transaction.monster.update({
                         where: { id: monster.id },
-                        data: {
-                            palXp,
-                            level: palLevel
-                        }
+                        data: { palXp, level: palLevel }
                     });
                 }
 
-
                 await transaction.player.update({
-                    where: {
-                        id: player.id
-                    },
+                    where: { id: player.id },
                     data: {
-                        coins: {
-                            increment: expedition.coinReward
-                        },
-                        palSpheres: {
-                            increment: expedition.palSphereReward
-                        },
-                        paldium: {
-                            increment: expedition.paldiumReward
-                        },
-                        wood: {
-                            increment: expedition.woodReward
-                        },
-                        stone: {
-                            increment: expedition.stoneReward
-                        }
+                        coins: { increment: expedition.coinReward },
+                        palSpheres: { increment: expedition.palSphereReward },
+                        megaSpheres: { increment: megaSphereReward },
+                        paldium: { increment: expedition.paldiumReward },
+                        wood: { increment: expedition.woodReward },
+                        stone: { increment: expedition.stoneReward },
+                        trainingManualS: { increment: trainingManualSReward },
+                        trainingManualM: { increment: trainingManualMReward }
                     }
                 });
 
                 return {
                     status: "claimed" as const,
-                    monsterSpecies: expedition.monster.species,
+                    monsterSpecies: monster.species,
+                    difficulty: expedition.difficulty,
                     coinReward: expedition.coinReward,
                     palSphereReward: expedition.palSphereReward,
+                    megaSphereReward,
                     paldiumReward: expedition.paldiumReward,
                     woodReward: expedition.woodReward,
                     stoneReward: expedition.stoneReward,
-    		    palXp,
-    		    palLevel,
-  		    levelUps
+                    trainingManualSReward,
+                    trainingManualMReward,
+                    palXpReward,
+                    palXp,
+                    palLevel,
+                    levelUps
                 };
             });
 
@@ -2960,16 +2958,31 @@ if (expeditionPlayer) {
         ? " 🏆 Maximum level reached!"
         : "";
 
+const expeditionRewards = [
+    `${result.coinReward} coins`,
+    ...(result.palSphereReward > 0
+        ? [`${result.palSphereReward} Pal Sphere${result.palSphereReward === 1 ? "" : "s"}`]
+        : []),
+    ...(result.megaSphereReward > 0
+        ? [`${result.megaSphereReward} Mega Sphere${result.megaSphereReward === 1 ? "" : "s"}`]
+        : []),
+    `${result.paldiumReward} Paldium`,
+    `${result.woodReward} Wood`,
+    `${result.stoneReward} Stone`,
+    ...(result.trainingManualSReward > 0
+        ? [`${result.trainingManualSReward} Training Manual S${result.trainingManualSReward === 1 ? "" : "s"}`]
+        : []),
+    ...(result.trainingManualMReward > 0
+        ? [`${result.trainingManualMReward} Training Manual M${result.trainingManualMReward === 1 ? "" : "s"}`]
+        : [])
+];
+
 await client.say(
     currentChannel,
-    `🎉 ${result.monsterSpecies} returned with ` +
-    `${result.coinReward} coins, ` +
-    `${result.palSphereReward} Pal Sphere` +
-    `${result.palSphereReward === 1 ? "" : "s"}, ` +
-    `${result.paldiumReward} Paldium, ` +
-    `${result.woodReward} Wood and ` +
-    `${result.stoneReward} Stone! ` +
-    `🐾 Pal Level ${result.palLevel} ` +
+    `🎉 ${result.monsterSpecies} returned from its ${result.difficulty} expedition with ` +
+    `${expeditionRewards.join(", ")}! ` +
+    `🐾 +${result.palXpReward} Pal XP. ` +
+    `Pal Level ${result.palLevel} ` +
     `(${result.palXp}/${result.palLevel * 100} XP).` +
     levelUpText
 );
