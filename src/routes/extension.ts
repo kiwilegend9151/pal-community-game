@@ -820,6 +820,7 @@ router.get(
                     monsterId: expedition.monster.id,
                     species: expedition.monster.species,
                     shiny: expedition.monster.shiny,
+                    difficulty: expedition.difficulty,
                     startedAt: expedition.startedAt,
                     completesAt: expedition.completesAt
                 }
@@ -842,10 +843,17 @@ router.post(
         try {
             const twitchId = req.extensionUser!.twitchId;
             const monsterId = String(req.body?.monsterId ?? "");
+            const difficulty = req.body?.difficulty ?? "normal";
 
             if (!monsterId) {
                 return res.status(400).json({
                     error: "A Pal must be selected"
+                });
+            }
+
+            if (difficulty !== "normal" && difficulty !== "hard") {
+                return res.status(400).json({
+                    error: "Invalid expedition difficulty"
                 });
             }
 
@@ -885,35 +893,74 @@ router.post(
                 });
             }
 
+            if (difficulty === "hard" && monster.level < 40) {
+                return res.status(400).json({
+                    error: "Your Pal must be at least level 40 for a Hard Expedition"
+                });
+            }
+
+            const duration =
+                difficulty === "hard"
+                    ? 2 * 60 * 60 * 1000
+                    : 60 * 60 * 1000;
+
             const startedAt = new Date();
             const completesAt = new Date(
-                startedAt.getTime() + 60 * 60 * 1000
+                startedAt.getTime() + duration
             );
+
+            const isHard = difficulty === "hard";
 
             await prisma.expedition.create({
                 data: {
                     playerId: player.id,
                     monsterId: monster.id,
+                    difficulty,
                     startedAt,
                     completesAt,
-                    coinReward:
-                        Math.floor(Math.random() * 76) + 25,
-                    palSphereReward:
-                        Math.floor(Math.random() * 4),
-                    paldiumReward:
-                        Math.floor(Math.random() * 5) + 1,
-                    woodReward:
-                        Math.floor(Math.random() * 6),
-                    stoneReward:
-                        Math.floor(Math.random() * 6)
+
+                    coinReward: isHard
+                        ? Math.floor(Math.random() * 151) + 100
+                        : Math.floor(Math.random() * 76) + 25,
+
+                    palSphereReward: isHard
+                        ? 0
+                        : Math.floor(Math.random() * 4),
+
+                    megaSphereReward: isHard
+                        ? Math.floor(Math.random() * 5) + 1
+                        : 0,
+
+                    paldiumReward: isHard
+                        ? Math.floor(Math.random() * 8) + 5
+                        : Math.floor(Math.random() * 5) + 1,
+
+                    woodReward: isHard
+                        ? Math.floor(Math.random() * 8) + 5
+                        : Math.floor(Math.random() * 6),
+
+                    stoneReward: isHard
+                        ? Math.floor(Math.random() * 8) + 5
+                        : Math.floor(Math.random() * 6),
+
+                    trainingManualSReward: isHard
+                        ? Math.floor(Math.random() * 4)
+                        : 0,
+
+                    trainingManualMReward: isHard
+                        ? (Math.random() < 0.05 ? 1 : 0)
+                        : 0,
+
+                    palXpReward: isHard ? 200 : 0
                 }
             });
 
             return res.json({
-                message: `${monster.species} started a 1-hour expedition`,
+                message: `${monster.species} started a ${isHard ? "2-hour Hard" : "1-hour Normal"} expedition`,
+                difficulty,
                 completesAt
             });
-               } catch (error) {
+        } catch (error) {
             console.error("Could not start expedition:", error);
 
             if (
@@ -939,6 +986,7 @@ router.post(
     async (req: ExtensionRequest, res) => {
         try {
             const twitchId = req.extensionUser!.twitchId;
+            const PAL_LEVEL_CAP = 80;
 
             const result = await prisma.$transaction(async (tx) => {
                 const player = await tx.player.findUnique({
@@ -980,6 +1028,35 @@ router.post(
                     );
                 }
 
+                // Award Pal XP to the Pal that went on the expedition.
+                const monster = expedition.monster;
+
+                let updatedPalLevel = monster.level;
+                let updatedPalXp = monster.palXp;
+
+                if (
+                    expedition.palXpReward > 0 &&
+                    updatedPalLevel < PAL_LEVEL_CAP
+                ) {
+                    updatedPalXp += expedition.palXpReward;
+
+                    while (
+                        updatedPalLevel < PAL_LEVEL_CAP &&
+                        updatedPalXp >= updatedPalLevel * 100
+                    ) {
+                        updatedPalXp -= updatedPalLevel * 100;
+                        updatedPalLevel++;
+                    }
+
+                    await tx.monster.update({
+                        where: { id: monster.id },
+                        data: {
+                            level: updatedPalLevel,
+                            palXp: updatedPalXp
+                        }
+                    });
+                }
+
                 const updatedPlayer = await tx.player.update({
                     where: {
                         id: player.id
@@ -991,6 +1068,9 @@ router.post(
                         palSpheres: {
                             increment: expedition.palSphereReward
                         },
+                        megaSpheres: {
+                            increment: expedition.megaSphereReward
+                        },
                         paldium: {
                             increment: expedition.paldiumReward
                         },
@@ -999,22 +1079,42 @@ router.post(
                         },
                         stone: {
                             increment: expedition.stoneReward
+                        },
+                        trainingManualS: {
+                            increment: expedition.trainingManualSReward
+                        },
+                        trainingManualM: {
+                            increment: expedition.trainingManualMReward
                         }
                     }
                 });
 
                 return {
-                    species: expedition.monster.species,
+                    species: monster.species,
+                    difficulty: expedition.difficulty,
                     coinReward: expedition.coinReward,
-                    palSphereReward:
-                        expedition.palSphereReward,
-                    paldiumReward:
-                        expedition.paldiumReward,
+                    palSphereReward: expedition.palSphereReward,
+                    megaSphereReward: expedition.megaSphereReward,
+                    paldiumReward: expedition.paldiumReward,
                     woodReward: expedition.woodReward,
                     stoneReward: expedition.stoneReward,
+                    trainingManualSReward: expedition.trainingManualSReward,
+                    trainingManualMReward: expedition.trainingManualMReward,
+                    palXpReward: expedition.palXpReward,
+                    palLevel: updatedPalLevel,
+                    palXp: updatedPalXp,
                     player: updatedPlayer
                 };
             });
+
+            await updateDailyQuestProgress(
+                (await prisma.player.findUniqueOrThrow({
+                    where: { twitchId },
+                    select: { id: true }
+                })).id,
+                "complete_expedition",
+                1
+            );
 
             return res.json(result);
         } catch (error) {

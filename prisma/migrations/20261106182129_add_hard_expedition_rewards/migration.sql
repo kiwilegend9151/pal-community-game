@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Expedition" ADD COLUMN     "megaSphereReward" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "palXpReward" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trainingManualMReward" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "trainingManualSReward" INTEGER NOT NULL DEFAULT 0;

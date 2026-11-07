@@ -102,6 +102,11 @@ model Expedition {
 
   startedAt   DateTime @default(now())
   completesAt DateTime
+  difficulty String @default("normal")
+  megaSphereReward      Int @default(0)
+  trainingManualSReward Int @default(0)
+  trainingManualMReward Int @default(0)
+  palXpReward           Int @default(0)
 
   coinReward      Int
   palSphereReward Int
